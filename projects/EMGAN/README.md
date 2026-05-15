@@ -13,7 +13,15 @@ offered in the first semester of 2026, at Unicamp, under the supervision of Prof
 | Enzo Campos | 247069 | Computer Engineering|
 | Marcelo Ferreira | 300882 | Computer Engineering|
 
-## Project Summary Description
+## Abstract
+
+> Summary of the objective, methodology **and results** obtained. In submission **D2**, it is acceptable to report partial results. Suggested maximum of 100 words.
+
+[PRESENTATION LINK](https://docs.google.com/presentation/d/1RQUPtrMktuhXLVYFDq8A5LLMe22JyeH8VmcdLbCdixM/edit?usp=sharing)
+
+## Problem Description / Motivation
+
+> Description of the generating context of the project theme. Motivation for addressing this project theme.
 
 Surface Electromyography (sEMG) signals of articulatory muscles reflect the speech production process. As such, they are a biosignal of interest for Silent Speech Interfaces (SSIs) [1], which aim to enable speech communication without depending on acoustic speech. However, acquiring these biological signals is notoriously difficult. Subjects must undergo a tiresome recording procedure, resulting in small datasets with low subject variability. Furthermore, the collected data is often lawfully restricted. Consequently, there is a strong motivation for Speech-to-EMG (STE) modeling, which could be explored to generate new, artificial EMG signals to improve ETS model training and mitigate data scarcity.
 
@@ -21,21 +29,19 @@ To address the issues of data acquisition and aid in the development of robust S
 
 The generator outputs a C-channel EMG signal. Therefore, the output of the generative model will be a multi-channel EMG signal of the exact same dimension as the target input data.
 
-[PRESENTATION LINK](https://docs.google.com/presentation/d/1RQUPtrMktuhXLVYFDq8A5LLMe22JyeH8VmcdLbCdixM/edit?usp=sharing)
+## Objective
 
-## Proposed Methodology
+> Description of what the project aims to do.  
+> It is possible to specify a general objective and specific objectives of the project.
 
-For this project, our models require datasets containing paired EMG and audio signals. Since this type of data is relatively rare, we have surveyed the publicly available datasets to compose a preliminary list of candidates. Over the first three weeks of the project, we will conduct an in-depth analysis of these sources to evaluate their quality, compatibility, and suitability for our goals. Following this assessment, we will select the final subset of datasets to be utilized and define how they will be integrated into our workflow. The datasets currently under consideration are:
+## Methodology
 
-- The EMG-UKA corpus for electromyographic speech processing [3]
-- Digital Voicing of Silent Speech [4]
-- An open dataset of multidimensional signals based on different speech patterns in pragmatic Mandarin [5]
-- DiffMV-ETS: Diffusion-based Multi-Voice Electromyography-to-Speech Conversion using Speaker-Independent Speech Training Targets [6]
-- AVE Speech Dataset: A Comprehensive Benchmark for Multi-Modal Speech Recognition Integrating Audio, Visual, and Electromyographic Signals [7]
-- CSL-EMG_Array: An Open Access Corpus for EMG-to-Speech Conversion [8]
-- emg2speech: synthesizing speech from electromyography using self-supervised speech models [9]
-- SilentWear: an Ultra-Low Power Wearable System for EMG-based Silent Speech Recognition [10]
-- Sentence-Level Silent Speech Recognition Using a Wearable EMG/EEG Sensor System with AI-Driven Sensor Fusion and Language Model [11]
+> Clearly and objectively describe, citing references, the methodology proposed to achieve the project objectives.  
+> Describe datasets used.  
+> Cite reference algorithms.  
+> Justify the reasons for the chosen methods.  
+> Point out relevant tools.  
+> Describe the evaluation methodology (how will it be assessed whether the objectives were met or not?).
 
 The generative modeling approach that will serve as the baseline for this study is the Speech-to-Electromyography Generative Adversarial Network (STE-GAN) presented in [2]. We found this approach particularly compelling due to its strong and reproducible results. Notably, STE-GAN directly converts acoustic speech to EMG signals in an end-to-end fashion, eliminating the need to predict intermediate features. In doing so, it achieved impressive metrics, such as a high Envelope Correlation Coefficient of 0.66 and over 80% Phoneme Accuracy on the generated signals. Furthermore, instead of naively sampling from a Gaussian distribution, the model conditions the generation on a controllable latent space—soft speech units extracted from audio—which importantly enables the model to generalize to speech of unseen speakers. Finally, our choice is strongly motivated by the fact that the authors made their code openly available, which greatly facilitates reproducibility for our project.
 
@@ -47,18 +53,63 @@ At first, we aim to reproduce the results presented in [2]. Then, by evaluating 
 
 Guided by the metrics presented in [2], we plan to measure the correlation between synthetic and real EMG envelope data, as well as the correctness of generated speech from synthetic EMG using the WER metric (usability). Additional metrics may also be proposed to evaluate any architectural changes.
 
-## Schedule
+### Datasets and Evolution
 
-**WEEKS 1 to 3**: During this initial phase, we will conduct literature reviews on the core concepts underlying the problem and the baseline model. Simultaneously, we will evaluate the 9 preliminary datasets. By assigning one dataset per member each week, we will thoroughly review all candidates within this timeframe. To build specialized expertise, individual research tasks will be divided as follows:
-- Marcelo will focus on the speech processing aspects of the problem (e.g., TTS, Self-Supervised Learning models).
-- Enzo will investigate the specificities of EMG signals, preprocessing techniques, and standard evaluation metrics.
-- Daniel will deeply analyze the STE-GAN architecture, including its internal modules, loss functions, and implementation details.
+> List the datasets used in the project.  
+> For each dataset, include a mini-table in the model below and then provide details on how it was analyzed/used, as in the example below.
 
-**WEEKS 4 and 5**: By this stage, we aim to have successfully reproduced the baseline STE-GAN code. This will allow us to initiate preliminary experiments, such as cross-dataset evaluations. We will also begin testing and adapting specific STE-GAN components, including the HuBERT module, the EMG Encoder, and analyzing the impact of data augmentation on the classifier.
+| Dataset       | Web Address       | Descriptive Summary                                   |
+| ------------- | ----------------- | ----------------------------------------------------- |
+| The EMG-UKA corpus for electromyographic speech processing [3] | https://www.kaggle.com/datasets/xabierdezuazo/emguka-trial-corpus | This dataset contains ~6 seconds samples of aligned EMG, audio and phonemes from 8 subjects, that sum 1h40min of signal. The EMG is sampled at 600 Hz and audio at 16 kHz. Six facial electrodes are used to capture the EMG. |
+| Digital Voicing of Silent Speech [4] | http://base1.org/ | Brief summary (two or three lines) about the dataset. |
+| An open dataset of multidimensional signals based on different speech patterns in pragmatic Mandarin [5] | http://base1.org/ | Brief summary (two or three lines) about the dataset. |
+| DiffMV-ETS: Diffusion-based Multi-Voice Electromyography-to-Speech Conversion using Speaker-Independent Speech Training Targets [6] | https://osf.io/jbsu2/overview | This dataset contains ~4 seconds samples of aligned EMG, audio and phonemes from 1 subject, that sum 3h40min of signal. The EMG is sampled at 800 Hz and audio at 44.1 kHz. Eight facial electrodes are used to capture the EMG. |
+| AVE Speech Dataset: A Comprehensive Benchmark for Multi-Modal Speech Recognition Integrating Audio, Visual, and Electromyographic Signals [7] | http://base1.org/ | Brief summary (two or three lines) about the dataset. |
+| CSL-EMG_Array: An Open Access Corpus for EMG-to-Speech Conversion [8] | http://base1.org/ | Brief summary (two or three lines) about the dataset. |
+| emg2speech: synthesizing speech from electromyography using self-supervised speech models [9] | http://base1.org/ | Brief summary (two or three lines) about the dataset. |
+| SilentWear: an Ultra-Low Power Wearable System for EMG-based Silent Speech Recognition [10] | http://base1.org/ | Brief summary (two or three lines) about the dataset. |
+| Sentence-Level Silent Speech Recognition Using a Wearable EMG/EEG Sensor System with AI-Driven Sensor Fusion and Language Model [11] | - | Won't be used |
 
-**WEEKS 6 to 9**: In the final phase, we will solidify our proposed contributions and conduct more extensive training sessions. We will perform comprehensive evaluations across the selected datasets to compile the final metrics, analyze the results, and prepare the project's final deliverables.
+For this project, our models require datasets containing paired EMG and audio signals. Since this type of data is relatively rare, we have surveyed the publicly available datasets to compose a preliminary list of candidates. Over the first three weeks of the project, we will conduct an in-depth analysis of these sources to evaluate their quality, compatibility, and suitability for our goals. Following this assessment, we will select the final subset of datasets to be utilized and define how they will be integrated into our workflow. The datasets currently under consideration are:
+
+> Provide a description of what you concluded about this dataset. Suggested guiding questions or information to include:
+>
+> - What is the dataset format, size, type of annotation?
+All audio was available as .wav files and sampling frequency ranged tom 16 kHz to 48 kHz. The EMG data came in various formats, with it's sampling frequency varying from 256 to 2048 Hz. Phonemes were captured for each sliding window of size 27ms and stride of 10ms. All samples have a duration of a few seconds.
+> - What transformations and preprocessing were done? Cleaning, re-annotation, etc.
+No transformations were applied up to now, except for the main dataset [4], which was resampled...
+> - Include a summary with descriptive statistics of the dataset(s).
+:)
+> - Use tables and/or charts to describe the main aspects of the dataset that are relevant to the project.
+The total number of subjects is small...
+
+The channels had to be thouroughly aligned so that all datasets could be used together...
+
+### Workflow
+
+> Use a tool that allows you to design the workflow and save it as an image (e.g., Draw.io). Insert the image in this section.  
+> You may choose to use a workflow manager (Sacred, Pachyderm, etc.), in which case use the manager to generate a diagram for you.  
+> Remember that the goal of drawing the workflow is to help anyone who wishes to reproduce your experiments.
+
+## Experiments, Results, and Discussion of Results
+
+> In the intermediate project submission (**D2**), this section may contain partial results, explorations of implemented solutions, and  
+> discussions about such experiments, including decisions to change the project trajectory or the description of new experiments as a result of these explorations.
+
+> In the final project submission (**D3**), this section should list the **main** results obtained (not necessarily all), which best represent the fulfillment of the project objectives.
+
+> The discussion of results may be carried out in a separate section or integrated into the results section. This is a matter of style.  
+> It is considered fundamental that the presentation of results should not serve as a treatise whose only purpose is to show that "a lot of work was done."  
+> What is expected from this section is that it **presents and discusses** only the most **relevant results**, highlighting the **strengths and/or limitations** of the methodology, emphasizing aspects of **performance**, and containing content that can be classified as **organized, didactic, and reproducible sharing of knowledge relevant to the community**.
+
+## Conclusion
+
+> The Conclusion section should recover the main information already presented in the report and point to future work.  
+> In the intermediate project submission (**D2**), it may contain information about which steps or how the project will be conducted until its completion.  
+> In the final project submission (**D3**), the conclusion is expected to outline, among other aspects, possibilities for the project’s continuation.
 
 ## Bibliographic References
+
 
 1. T. Schultz, M. Wand, T. Hueber, D. J. Krusienski, C. Herff, and J. S. Brumberg, “Biosignal-based spoken communication: A survey,” IEEE/ACM Transactions on Audio, Speech and Language
 Processing, vol. 25, no. 12, pp. 2257–2271, 2017.
