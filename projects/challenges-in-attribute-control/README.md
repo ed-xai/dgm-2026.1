@@ -117,15 +117,39 @@ No transformations and cleaning were done up to now due to the fact that the exp
 | Test | 22.5K |
 
 ### Workflow
-<inserir_imagem_workflow>
+
+### Experimento 1 - Viés no dataset
+![Resultado do experimento](imagens/flow_experimento1_dataset.png)
+
+### Experimento 2 - Embeddings do CLIP
+![Resultado do experimento](imagens/flow_experimento2_dataset.png)
+
+### Experimento 3 - Cross-attention mechanism
+
 
 ## Experiments, results and discussion of results
 
+### Experimento 1 - Viés no dataset
+
+### Experimento 2 - Embeddings do CLIP
 
 ## Conclusion
-
+By analyzing the results from our experiments, we concluded that the problem of attribute binding on diffusion models, in this case Stable Diffusion, comes from different components of the architecture instead of having just one responsible. The way the training dataset was generated, the problem of embedding representation on CLIP and the cross-attention mechanism failing to pay attention on certain attributes combined makes this an intrinsic problem of this architecture.
 ## Bibliographic references
+- Conceptual Captions: A Cleaned, Hypernymed, Image Alt-text Dataset For Automatic Image Captioning: https://aclanthology.org/P18-1238.pdf
 
+- LAION-400M: Open Dataset of CLIP-Filtered 400 Million Image-Text Pairs: https://arxiv.org/abs/2111.02114
+
+- LAION-5B: An open large-scale dataset for training next generation image-text models: https://arxiv.org/abs/2210.08402
+
+- Rombach, R. et al. (2021). “High-Resolution Image Synthesis with Latent Diffusion
+Models”. Em: CoRR abs/2112.10752. url: https://arxiv.org/abs/2112.10752 (ver p. 20).
+
+- Ho, J., A. Jain e P. Abbeel (2020). “Denoising Diffusion Probabilistic Models”. Em: CoRR
+abs/2006.11239. url: https://arxiv.org/abs/2006.11239 (ver p. 20).
+
+- Nichol, A. et al. (2021). “GLIDE: Towards Photorealistic Image Generation and Editing
+with Text-Guided Diffusion Models”. Em: CoRR abs/2112.10741. url: https://arxiv.org/abs/2112.10741 (ver p. 20).
 ## Project Summary Description
 
 ### Description of the project theme, including generating context and motivation.
