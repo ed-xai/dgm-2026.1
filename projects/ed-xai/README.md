@@ -112,7 +112,11 @@ The per-category coverage on the training split is summarized below:
 
 ### Workflow
 
-> *Workflow diagram to be added.*
+<img src="images/freqClassifier_Eval.png" width="600"/>
+
+<img src="images/fakevlm_extended.png" width="600"/>
+
+<img src="images/benchmark-eval.png" width="600"/>
 
 The project follows a three-stage pipeline:
 
