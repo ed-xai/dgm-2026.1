@@ -84,15 +84,15 @@ Evaluating generated 3D point clouds of strictly concave surfaces requires speci
 
 > In the final project submission (D3), this section should list the main results obtained (not necessarily all), which best represent the fulfillment of the project objectives.
 
-    The discussion of results may be carried out in a separate section or integrated into the results section. This is a matter of style.
-    It is considered fundamental that the presentation of results should not serve as a treatise whose only purpose is to show that "a lot of work was done."
-    What is expected from this section is that it presents and discusses only the most relevant results, highlighting the strengths and/or limitations of the methodology, emphasizing aspects of performance, and containing content that can be classified as organized, didactic, and reproducible sharing of knowledge relevant to the community.
+> The discussion of results may be carried out in a separate section or integrated into the results section. This is a matter of style.
+> It is considered fundamental that the presentation of results should not serve as a treatise whose only purpose is to show that "a lot of work was done."
+> What is expected from this section is that it presents and discusses only the most relevant results, highlighting the strengths and/or limitations of the methodology, emphasizing aspects of performance, and containing content that can be classified as organized, didactic, and reproducible sharing of knowledge relevant to the community.
 
-Conclusion
+## Conclusion
 
-    The Conclusion section should recover the main information already presented in the report and point to future work.
-    In the intermediate project submission (D2), it may contain information about which steps or how the project will be conducted until its completion.
-    In the final project submission (D3), the conclusion is expected to outline, among other aspects, possibilities for the project’s continuation.
+> The Conclusion section should recover the main information already presented in the report and point to future work.
+> In the intermediate project submission (D2), it may contain information about which steps or how the project will be conducted until its completion.
+> In the final project submission (D3), the conclusion is expected to outline, among other aspects, possibilities for the project’s continuation.
 
 
 ## Schedule
