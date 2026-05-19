@@ -65,25 +65,24 @@ Evaluating generated 3D point clouds of strictly concave surfaces requires speci
 > |--|--|--|
 > |Dataset Title | http://base1.org/ | Brief summary (two or three lines) about the dataset.|
 
-    Provide a description of what you concluded about this dataset. Suggested guiding questions or information to include:
+> Provide a description of what you concluded about this dataset. Suggested guiding questions or information to include:
+> - What is the dataset format, size, type of annotation?
+> - What transformations and preprocessing were done? Cleaning, re-annotation, etc.
+> - Include a summary with descriptive statistics of the dataset(s).
+> - Use tables and/or charts to describe the main aspects of the dataset that are relevant to the project.
 
-        What is the dataset format, size, type of annotation?
-        What transformations and preprocessing were done? Cleaning, re-annotation, etc.
-        Include a summary with descriptive statistics of the dataset(s).
-        Use tables and/or charts to describe the main aspects of the dataset that are relevant to the project.
+### Workflow
 
-Workflow
+> Use a tool that allows you to design the workflow and save it as an image (e.g., Draw.io). Insert the image in this section.
+> You may choose to use a workflow manager (Sacred, Pachyderm, etc.), in which case use the manager to generate a diagram for you.
+> Remember that the goal of drawing the workflow is to help anyone who wishes to reproduce your experiments.
 
-    Use a tool that allows you to design the workflow and save it as an image (e.g., Draw.io). Insert the image in this section.
-    You may choose to use a workflow manager (Sacred, Pachyderm, etc.), in which case use the manager to generate a diagram for you.
-    Remember that the goal of drawing the workflow is to help anyone who wishes to reproduce your experiments.
+## Experiments, Results, and Discussion of Results
 
-Experiments, Results, and Discussion of Results
+> In the intermediate project submission (D2), this section may contain partial results, explorations of implemented solutions, and
+> discussions about such experiments, including decisions to change the project trajectory or the description of new experiments as a result of these explorations.
 
-    In the intermediate project submission (D2), this section may contain partial results, explorations of implemented solutions, and
-    discussions about such experiments, including decisions to change the project trajectory or the description of new experiments as a result of these explorations.
-
-    In the final project submission (D3), this section should list the main results obtained (not necessarily all), which best represent the fulfillment of the project objectives.
+> In the final project submission (D3), this section should list the main results obtained (not necessarily all), which best represent the fulfillment of the project objectives.
 
     The discussion of results may be carried out in a separate section or integrated into the results section. This is a matter of style.
     It is considered fundamental that the presentation of results should not serve as a treatise whose only purpose is to show that "a lot of work was done."
