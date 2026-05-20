@@ -149,7 +149,7 @@ answer tokens = [answer_start, answer_end)
 Then, during the forward pass, FFN activations are captured for all tokens, but only the
 answer-token positions are selected:
 
-$$z{\ell,t}\quad \text{for } t \in [\text{answer\_start}, \text{answer\_end})$$
+$$z_{\ell,t}\quad\text{for } t \in [\mathrm{answer\_start}, \mathrm{answer\_end})$$
 
 If the answer is split into multiple tokens, their FFN activations are averaged:
 
@@ -217,9 +217,7 @@ neuron discarded by L1;
 Since $y$ = 1 denotes hallucination, H-Neurons are defined as:
 
 
-$$\Large\mathcal{H}=\{j : w_j > 0\}$$
-
-.
+$$\mathcal{H}=\{j : w_j > 0\}$$
 
 $$\Large\%H=\frac{|\mathcal{H}|}{524288}\times 100$$
 
