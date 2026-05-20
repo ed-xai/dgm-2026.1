@@ -208,7 +208,7 @@ $$
 
 This combination was chosen because MSE penalizes larger pixel-level errors, while L1 helps preserve sharper intensity differences and is less sensitive to outliers. Since chest X-rays are grayscale images normalized to `[0, 1]`, both terms are computed directly on flattened image tensors.
 
-The KL-divergence term is computed from \(\mu\) and \(\log\sigma^2\):
+The KL-divergence term is computed from $\mu$ and $\log\sigma^2$:
 
 $$
 D_{KL} =
