@@ -430,7 +430,6 @@ Five experiments were run, each corresponding to one notebook under [notebooks/]
 | `1.2-train_augmented_classifier_cnn` | Measure the effect of light geometric augmentation on the same SimpleCNN. |
 | `1.1-train_pretrained_resnet18` | Linear probe on ImageNet ResNet-18 (head-only training). |
 | `1.3-train_pretrained_densenet121` | Linear probe on ImageNet DenseNet-121 (CheXNet-style head-only). |
-| `1.4-finetune_densenet121` | Partial fine-tuning of DenseNet-121 (`denseblock4` + head) with differentiated learning rates. |
 
 The training/validation AUC and loss were tracked at every epoch. Early stopping triggered between epochs 12 and 20 for every model, well before the 100-epoch budget — none of the configurations were limited by training time.
 
