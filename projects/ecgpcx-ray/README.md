@@ -384,7 +384,100 @@ The original project schedule is also available:
 
 ## Experiment 1: Classifier Baseline
 
-> Falar da baseline
+The classifier is the downstream oracle used to evaluate the counterfactual validity of the generative models (CVAE and CycleGAN): a generated *pneumonia* image should flip the classifier's prediction with respect to the source *healthy* image, and vice-versa. The classifier itself is a standard binary supervised model that takes a single-channel chest X-ray as input and outputs a logit for the pneumonia class.
+
+As the main ideia is that the classifier will be the way to evaluate the generative models, it has to be good classifier, so some test were experimented for it's development. Four families of models were trained and compared on the same train/val/test splits of the NIH Chest X-ray dataset:
+
+- **SimpleCNN (baseline)** — a 5-block convolutional network trained from scratch.
+- **SimpleCNN + augmentation** — same architecture, trained with light geometric augmentations.
+- **FrozenResNet-18** — ImageNet-pretrained ResNet-18 with the backbone frozen and a new binary head.
+- **FrozenDenseNet-121** — ImageNet-pretrained DenseNet-121 with the backbone frozen and a new binary head (CheXNet-style architecture).
+
+All models output a single raw logit and are trained with `BCEWithLogitsLoss` using an attenuated `pos_weight = sqrt(n_neg / n_pos)` to address severe class imbalance (~0.5% pneumonia in train). The square-root attenuation softens the standard `n_neg / n_pos` weight (≈190) into a more stable value (~13.8) that still upweights positives without dominating the gradient.
+
+### 1.1 Training Configuration
+
+| Hyperparameter | Value |
+|---|---|
+| Image size (cache) | 128 × 128 (grayscale, normalized to [0, 1]) |
+| Train / Val / Test | 42,452 / 8,798 / 9,425 |
+| Pneumonia rate | train 0.525% · val 0.557% · test 0.531% |
+| Batch size | 32 (pretrained) / 64 (SimpleCNN) |
+| Learning rate | 3 × 10⁻⁴ |
+| Optimizer | Adam (β₁ = 0.9, β₂ = 0.999), weight_decay = 1 × 10⁻⁴ |
+| Loss | BCEWithLogits with `pos_weight = sqrt(n_neg / n_pos)` ≈ 13.76 |
+| Scheduler | ReduceLROnPlateau on val AUC (factor 0.5, patience 3) |
+| Epochs | up to 100, early-stop patience 10 (on val AUC) |
+
+**SimpleCNN architecture** — 5 convolutional blocks (Conv3×3 → BN → ReLU → MaxPool 2) with channels `1 → 32 → 64 → 128 → 256 → 512`, followed by AdaptiveAvgPool2d(1), Dropout(0.3), `Linear(512 → 128) → ReLU → Dropout(0.3) → Linear(128 → 1)`.
+
+**Frozen backbones** — torchvision ImageNet-pretrained ResNet-18 and DenseNet-121 with the entire backbone frozen and a new `Linear(features → 1)` head. Grayscale inputs are repeated across 3 channels and standardized with ImageNet statistics before the backbone.
+
+**Training data augmentation** (train split only, when enabled):
+- Random rotation (±10°)
+- Random horizontal flip (p = 0.5)
+- Random resized crop (scale = [0.95, 1.0])
+
+**Evaluation protocol** — at the end of training the best checkpoint (max val AUC) is loaded. An optimal decision threshold is selected on the validation set via Youden's J statistic (`argmax(TPR − FPR)`), then applied to the test set. AUC-ROC is threshold-independent and is the primary metric; accuracy and confusion matrix are reported at the Youden threshold.
+
+### 1.2 Training
+
+Five experiments were run, each corresponding to one notebook under [notebooks/](notebooks/):
+
+| Notebook | Goal |
+|---|---|
+| `1.0-train_baseline_classifier_cnn` | Establish a from-scratch baseline with no augmentation. |
+| `1.2-train_augmented_classifier_cnn` | Measure the effect of light geometric augmentation on the same SimpleCNN. |
+| `1.1-train_pretrained_resnet18` | Linear probe on ImageNet ResNet-18 (head-only training). |
+| `1.3-train_pretrained_densenet121` | Linear probe on ImageNet DenseNet-121 (CheXNet-style head-only). |
+| `1.4-finetune_densenet121` | Partial fine-tuning of DenseNet-121 (`denseblock4` + head) with differentiated learning rates. |
+
+The training/validation AUC and loss were tracked at every epoch. Early stopping triggered between epochs 12 and 20 for every model, well before the 100-epoch budget — none of the configurations were limited by training time.
+
+### 1.3 Results
+
+#### 1.3.1 SimpleCNN — Baseline and Augmented Variants
+
+**Baseline (no augmentation)** — [results/baseline_cnn_20260516-164040/](results/baseline_cnn_20260516-164040/)
+
+![SimpleCNN baseline training curves](results/baseline_cnn_20260516-164040/train_curves.png)
+
+The SimpleCNN baseline was the only experiment in which a `pos_weight` scale of `n_neg / n_pos` (≈190). was applied. The model reached a peak validation AUC of **0.6411** at epoch 8, after which performance deteriorated. Training AUC continued climbing past 0.90 while training loss fell from 0.27 to 0.18. However, validation loss began rising after epoch 8, indicating overfitting. Early stopping triggered at epoch 18. On the test set, the model achieved AUC = **0.6668** and accuracy = **0.9947** — the latter being a misleading metric: with only 0.5% positive samples, predicting "healthy" for every instance already yields 99.5% accuracy. Given the overfitting observed, one likely contributing factor was the excessively large `pos_weight`, and subsequent experiments adopted an attenuated value of `pos_weight = sqrt(n_neg / n_pos)`.
+
+**Augmented variant** — [results/augmented_cnn_20260517-172811/](results/augmented_cnn_20260517-172811/)
+
+![Augmentation examples](results/augmented_cnn_20260517-172811/augmentation_examples.png)
+
+![SimpleCNN augmented training curves](results/augmented_cnn_20260517-172811/training_curves.png)
+
+Adding light geometric augmentation (rotation ±10°, horizontal flip, random resized crop 0.95–1.0) brought peak val AUC to **0.6284** (epoch 2) with early stopping at epoch 12. Test AUC = **0.6383**, test accuracy = **0.6857**. The augmentation slightly reduced overfitting (train and val curves stay closer together) but did **not** improve the AUC over the no-augmentation baseline. The drop in accuracy versus the baseline is expected: a different (higher) effective threshold from Youden's J trades many true negatives for slightly higher recall, but at this positive rate the trade is not favourable on raw accuracy.
+
+#### 1.3.2 Frozen Pretrained Backbones
+
+**FrozenResNet-18** — [results/resnet18_20260518-110522/](results/resnet18_20260518-110522/)
+
+![ResNet18 ROC](results/resnet18_20260518-110522/training_curves.png)
+
+The third baseline introduced a pretrained approach using ResNet18 as a frozen feature extractor, with only the classification head trained from scratch. Over 20 epochs — with no early stopping triggered — training loss decreased modestly from 0.27 to 0.24, while training AUC improved gradually but with considerable noise, oscillating between 0.68 and 0.72 in the later epochs without clear convergence. Validation AUC showed a slow, steady improvement throughout training, rising from 0.52 at epoch 1 to a peak of 0.5758 at epoch 19, with no sign of the sharp deterioration observed in the SimpleCNN baseline. Validation loss remained highly volatile across all epochs, exhibiting no consistent upward or downward trend, which suggests the frozen backbone produced representations that were not well-suited to this domain without fine-tuning.
+
+The final metrics were: best validation AUC = 0.5758, test AUC = 0.5718, and test accuracy = 0.7211. Training AUC plateaued around 0.71, indicating that the classification head extracted as much discriminative signal as the frozen ImageNet features could provide
+
+**FrozenDenseNet-121** — [results/densenet121_20260518-094701/](results/densenet121_20260518-094701/)
+
+![DenseNet121 training curves](results/densenet121_20260518-094701/training_curves.png)
+
+The fourth baseline adopted DenseNet-121 as a frozen feature extractor, following the same protocol as the ResNet18 baseline. Training dynamics showed a clear and consistent improvement: training loss fell steadily from 0.27 to 0.18, and training AUC climbed from 0.60 to 0.88 over 12 epochs — a substantially stronger training signal than observed in any previous baseline. However, validation behavior told the opposite story. Validation loss rose monotonically from 0.46 at epoch 1 to 0.88 at epoch 12, and validation AUC peaked early at 0.5728 (epoch 2) before declining and oscillating around 0.56–0.57 for the remainder of training, indicating severe overfitting from the first epochs onward. Early stopping triggered at epoch 13.
+
+The final metrics were: best validation AUC = 0.5406 (epoch 3), test AUC = 0.6207, and test accuracy = 0.7949. Despite DenseNet-121 being the backbone behind CheXNet and considerably deeper than ResNet18, the frozen-backbone setup did not outperform the from-scratch SimpleCNN. The rapidly diverging train and validation curves suggest that the dense feature representations, while powerful in the ImageNet domain, do not generalize to chest X-ray pathology without fine-tuning — and that the classification head, trained alone, quickly memorized training-set patterns rather than learning transferable discriminative features.
+
+#### 1.3.3 Consolidated Test-Set Results
+
+| Notebook | Model | Test AUC ↑ | Test Acc (Youden) | Best Val AUC | Stopped at |
+|---|---|---|---|---|---|
+| 1.0 | SimpleCNN baseline (no aug) | 0.6668 | 0.9947* | 0.6411 | epoch 18 |
+| 1.2 | SimpleCNN + augmentation | 0.6383 | 0.6857 | 0.6284 | epoch 12 |
+| 1.1 | FrozenResNet-18 (linear probe) | 0.5718 | 0.7211 | 0.5758 | epoch 20 |
+| 1.3 | FrozenDenseNet-121 (linear probe) | 0.6207 | 0.7949 | 0.5406 | epoch 13 |
 
 ## Experiment 2: CVAE Training
 
@@ -574,6 +667,15 @@ The FID scores are moderately high. The slightly better FID for the P→H direct
 
 ## Discussion
 
+### Baseline
+
+None of the four baselines achieved satisfactory classification performance, and the training dynamics observed across experiments were largely inconsistent with the behavior expected from well-trained models. Training and validation curves frequently diverged, converged prematurely, or failed to stabilize, reflecting the compounding challenges of severe class imbalance, domain shift, and limited model capacity relative to the complexity of the task.
+
+The classification results obtained are insufficient to reliably serve as a downstream oracle for evaluating the generative models (CVAE and CycleGAN). An effective oracle requires a classifier with strong discriminative power — particularly high sensitivity to the minority class — so that differences in the quality of synthetic images are reflected in measurable performance gaps. With AUC values hovering near chance level across all baselines, the classifier cannot be trusted to meaningfully distinguish between real and generated pneumonia images.
+One factor likely contributing to the weak results is the aggressive downsampling of images to 128×128 pixels. Chest X-ray interpretation is a fine-grained task: subtle findings such as consolidation patterns, interstitial markings, and bilateral distribution cues — all relevant to pneumonia diagnosis — may be lost or distorted at this resolution. Increasing the input resolution to 256×256 is a natural next step and is expected to benefit not only the classifier but also the generative models, which would operate on richer and more diagnostically informative representations.
+
+A further challenge is the strong class imbalance in the training set, where positive (pneumonia) cases represent a small fraction of the data. Despite mitigation strategies such as weighted sampling and loss scaling, no baseline achieved consistent recall for the minority class. A promising direction is to augment the training set with synthetic images generated by the CVAE and CycleGAN models, which would directly test whether the generative models produce samples informative enough to improve downstream classification.
+
 ### CVAE
 
 The CVAE provides a stable and interpretable baseline for conditional counterfactual generation. Its main advantage is that the conditioning mechanism is direct: disease label, age, and gender are explicitly passed to the encoder and decoder, making it simple to control the target generation setting.
@@ -633,6 +735,7 @@ Although counterfactual medical image generation offers promising opportunities 
 12. Xia, Tian, et al. "Mitigating attribute amplification in counterfactual image generation." International Conference on Medical Image Computing and Computer-Assisted Intervention. Cham: Springer Nature Switzerland, 2024.
 13. Herington J, McCradden MD, Creel K, Boellaard R, Jones EC, Jha AK, Rahmim A, Scott PJH, Sunderland JJ, Wahl RL, Zuehlsdorff S, Saboury B. Ethical Considerations for Artificial Intelligence in Medical Imaging: Data Collection, Development, and Evaluation. J Nucl Med. 2023 Dec 1;64(12):1848-1854. doi: 10.2967/jnumed.123.266080. PMID: 37827839; PMCID: PMC10690124.
 14. Jones, C., Castro, D.C., De Sousa Ribeiro, F. et al. A causal perspective on dataset bias in machine learning for medical imaging. Nat Mach Intell 6, 138–146 (2024). https://doi.org/10.1038/s42256-024-00797-8
+15. Rajpurkar, Pranav, et al. "CheXNet: Radiologist-Level Pneumonia Detection on Chest X-Rays with Deep Learning." arXiv, 2017. https://arxiv.org/abs/1711.05225
 
 ---
 
