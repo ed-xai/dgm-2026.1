@@ -86,7 +86,7 @@ To implement the aforementioned pipelines within the project's timeframe, we wil
 ### Architectural Design and Use Case Alignment
 #### Two-Stage Inference Pipeline
 > To ensure inputs match constraints correctly when deployed, the architecture assumes a Two-Stage Pipeline for final end-user inference:
-> 1. 2D Segmentation & Cropping: The pothole must be isolated from the surrounding environment. While we use YOLO bounding boxes to automate this during training, an end-user could utilize any segmenter (e.g., SAM) or even manual cropping. The essential preprocessing forces the bounding box into a square aspect ratio plus a margin, padding missing visual data with black pixels so the real physical scale remains untouched before reaching our generative stage.
+> 1. 2D Segmentation & Cropping: The pothole was isolated from the surrounding environment.
 > 2.  Generative 3D Reconstruction (2D->3D): Our core model (Point-E) receives the square RGB crop and outputs a point cloud (1024 points). Using saved scale factors, this generic 3D output is re-upscaled directly into real-world topological dimensions to measure depth and severity.
 
 #### Visual Quality Control (Gold Standard Curation)
