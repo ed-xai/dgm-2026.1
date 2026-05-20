@@ -112,14 +112,36 @@ No transformations and cleaning were done up to now due to the fact that the exp
 ### Experiment 1 - Dataset Analysis
 
 ![Resultado do experimento](imagens/flow_experimento1_dataset.png)
+Does the model learn true association (binding)? Or only co-occurrence? In other words, is it actually associating a specific attribute to a specific object, or are both appearing simultaneously?
+Example:
+“yellow banana” -> makes sense, we are assigning the color yellow to the banana object
+“banana + pink background” -> misleading co-occurrence
+We also used the PPMI (Positive Pointwise Mutual Information) metric, measuring the following: "Does this object and its color really have a relationship, or do they just appear together by chance?"
+Example:
+“green frog” → makes sense
+“pink banana” → probably not
+Simply counting frequency (baseline) does NOT solve the problem, because:
+some colors are common (“white”, “black”)
+some objects appear very frequently
+So we need something that answers:
+“Is this co-occurrence more frequent than expected by chance?”
 
 ### Experiment 2 - Embeddings do CLIP
+Does CLIP understand which object the color belongs to?
+Cosine similarity to understand if CLIP thinks two phrases are similar (or how similar they are)
+Superior limit → Similarity between paraphrases of the same concept: e.g. “a green frog” vs “a frog that is green”
+Inferior limit → Similarity between concepts with no relation: e.g. “a green frog” vs “a red car”
+Idea: How far CLIP put two sentences away (with and without relation between them)
+Binding test:
+“a green frog and a red car”
+“a red frog and a green car”
+Exact same words, just differing to who the attribute belongs to
 
 ![Resultado do experimento](imagens/flow_experimento2_clip.png)
 
 ### Experiment 3 - Cross-attention mechanism
 
-![Resultado do experimento](imagens/flow_experimento3_cross_attention.jpg)
+![Resultado do experimento](imagens/flow_experimento3_cross_attention.png)
 
 This experiment aimed to analyze the behavior of cross-attention maps in a text-to-image model, with the goal of understanding how the model distributes attention between object tokens and attribute tokens during image generation.
 
