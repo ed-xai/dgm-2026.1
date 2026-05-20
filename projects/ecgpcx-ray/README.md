@@ -18,22 +18,16 @@ offered in the **first semester of 2026 (2026.1)**, at Unicamp, under the superv
 # Project Summary Description
 
 # Abstract
-> Summary of the objective, methodology **and results** obtained. In submission **D2**, it is acceptable to report partial results. Suggested maximum of 100 words.
-
-> Falar da baseline e CycleGAN
 
 This project investigates counterfactual generation for pneumonia in chest X-ray images as a tool for data augmentation and explainability. Using the NIH Chest X-ray dataset, we selected healthy images and images annotated only with pneumonia, cleaned metadata, resized images to 128 x 128 pixels, and built patient-level train/validation/test splits. A Conditional Variational Autoencoder (CVAE) and a Cycle-Consistent GAN (CycleGAN) conditioned on disease label, age, and gender were implemented in PyTorch. Partial results include the preprocessing pipeline, exploratory data analysis, trained CVAE and CycleGAN checkpoints, and reconstruction outputs. Current limitations are class imbalance, blurry reconstructions, and the need for quantitative classification and explainability evaluation.
 
 # Problem Description / Motivation
-> Description of the generating context of the project theme. Motivation for addressing this project theme.
 
 Deep learning models for medical imaging are often limited by data scarcity and class imbalance, especially for less frequent pathological cases such as pneumonia in chest X-rays. In clinical applications, this limitation is especially relevant because models trained on imbalanced data may learn the dominant healthy class more effectively than the disease patterns of interest.
 
 Chest X-ray analysis for pneumonia detection is also challenging because high classification performance alone is not enough for clinical trust. Medical users need to understand which image regions influenced a model decision and whether the model is relying on plausible radiological cues. Counterfactual generation addresses both needs by creating images that preserve patient anatomy while changing the disease condition, making it possible to inspect what the model changes when translating between healthy and pneumonia domains.
 
 # Objective
-> Description of what the project aims to do.  
-> It is possible to specify a general objective and specific objectives of the project.
 
 The general objective is to develop a **generative framework for explainable data augmentation and interpretation** using **counterfactual image generation** in chest X-rays.
 
@@ -64,30 +58,13 @@ Expected model outputs are:
 
 # Methodology
 
-> Clearly and objectively describe, citing references, the methodology proposed to achieve the project objectives.  
-> Describe datasets used.  
-> Cite reference algorithms.  
-> Justify the reasons for the chosen methods.  
-> Point out relevant tools.  
-> Describe the evaluation methodology (how will it be assessed whether the objectives were met or not?).
-
 The methodology combines exploratory data analysis, metadata cleaning, patient-level data splitting, conditional generative modeling, and qualitative counterfactual inspection. The implemented models are a CVAE, a CycleGAN and classifier-based evaluation.
 
 ## Dataset
 
-> List the datasets used in the project.  
-> For each dataset, include a mini-table in the model below and then provide details on how it was analyzed/used, as in the example below.
-
 | Dataset | Web Address | Descriptive Summary |
 | ------------- | ----------------- | ----------------------------------------------------- |
 | NIH Chest X-rays | https://www.kaggle.com/datasets/nih-chest-xrays/data | Public chest X-ray dataset with 112,120 frontal X-ray images from 30,805 patients. Labels were obtained by text-mining associated radiology reports and are suitable for weakly supervised learning. |
-
-> Provide a description of what you concluded about this dataset. Suggested guiding questions or information to include:
->
-> - What is the dataset format, size, type of annotation?
-> - What transformations and preprocessing were done? Cleaning, re-annotation, etc.
-> - Include a summary with descriptive statistics of the dataset(s).
-> - Use tables and/or charts to describe the main aspects of the dataset that are relevant to the project.
 
 The NIH Chest X-ray dataset contains 12 image folders and a `Data_Entry_2017.csv` metadata file. The metadata includes image index, finding labels, follow-up number, patient ID, patient age, patient gender, view position, original image dimensions, and pixel spacing.
 
@@ -284,8 +261,6 @@ Cycle consistency can help preserve anatomical structure while modifying disease
 
 ### 2. Classification Models
 
-> Explicar o que foi implementado da baseline
-
 A classification model is a central component of this project, as it provides the basis for evaluating both data augmentation and explainability through counterfactuals.
 
 The classifier is trained to perform a binary classification task:
@@ -353,9 +328,6 @@ The evaluation will consider three aspects:
 
 # Workflow
 
-> Use a tool that allows you to design the workflow and save it as an image (e.g., Draw.io). Insert the image in this section.  
-> Remember that the goal of drawing the workflow is to help anyone who wishes to reproduce your experiments.
-
 The preprocessing workflow used to reproduce the current experiments is shown below.
 
 ![Preprocessing workflow](images/preprocessing.png)
@@ -375,12 +347,6 @@ The original project schedule is also available:
 ![Schedule](images/schedule.png)
 
 # Experiments, Results, and Discussion of Results
-
-> In the intermediate project submission (**D2**), this section may contain partial results, explorations of implemented solutions, and  
-> discussions about such experiments, including decisions to change the project trajectory or the description of new experiments as a result of these explorations.
-
-> It is considered fundamental that the presentation of results should not serve as a treatise whose only purpose is to show that "a lot of work was done."  
-> What is expected from this section is that it **presents and discusses** only the most **relevant results**, highlighting the **strengths and/or limitations** of the methodology, emphasizing aspects of **performance**, and containing content that can be classified as **organized, didactic, and reproducible sharing of knowledge relevant to the community**.
 
 ## Experiment 1: Classifier Baseline
 
@@ -709,12 +675,11 @@ Main limitations and future direction of the CycleGAN include:
 
 # Conclusion
 
-> The Conclusion section should recover the main information already presented in the report and point to future work.  
-> In the intermediate project submission (**D2**), it may contain information about which steps or how the project will be conducted until its completion.  
+This work presented a generative framework for counterfactual image generation in chest X-rays, combining a CVAE and a CycleGAN trained on the NIH Chest X-ray dataset to translate images between healthy and pneumonia domains. The CVAE produced anatomically consistent counterfactuals (mean SSIM 0.82) but with limited realism (FID 136.5), while the CycleGAN achieved sharper translations (mean FID 115.3) though with residual artifacts. A downstream binary classifier was trained, with the best model reaching a test AUC of 0.67, insufficient to reliably assess counterfactual validity. 
+
+Remaining challenges include class imbalance, image resolution, and the need for classifier-grounded explainability evaluation. Future work will increase image resolution to 256×256, refine model architectures, augment the training set with synthetic images to improve classifier performance, and use the improved classifier to validate counterfactual generation and support explainability through difference maps and Grad-CAM comparisons. 
 
 # Ethical considerations
-
-> Adicionar mais sobre as considerações éticas
 
 Although counterfactual medical image generation offers promising opportunities for explainability and data augmentation, it also raises important ethical concerns. Generative models may amplify demographic biases, hallucinate clinically invalid findings, or unintentionally alter sensitive attributes such as age and sex. Additionally, synthetic medical data may still contain privacy risks due to memorization effects. Therefore, careful evaluation of fairness, realism, and clinical plausibility is essential before deployment in healthcare settings.
 
