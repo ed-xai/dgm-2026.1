@@ -114,6 +114,7 @@ Does the model learn true association (binding)? Or only co-occurrence? In other
 Example:
 “yellow banana” -> makes sense, we are assigning the color yellow to the banana object
 “banana + pink background” -> misleading co-occurrence
+
 We also used the PPMI (Positive Pointwise Mutual Information) metric, measuring the following: "Does this object and its color really have a relationship, or do they just appear together by chance?"
 Example:
 “green frog” → makes sense
@@ -129,6 +130,7 @@ Does CLIP understand which object the color belongs to?
 Cosine similarity to understand if CLIP thinks two phrases are similar (or how similar they are)
 Superior limit → Similarity between paraphrases of the same concept: e.g. “a green frog” vs “a frog that is green”
 Inferior limit → Similarity between concepts with no relation: e.g. “a green frog” vs “a red car”
+
 Idea: How far CLIP put two sentences away (with and without relation between them)
 Binding test:
 “a green frog and a red car”
