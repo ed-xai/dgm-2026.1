@@ -45,6 +45,7 @@ torchrun --nproc_per_node=1 -m FakeVLM_extended.train \
     --learning_rate 1e-3 \
     --freq_extractor_name fft \
     --freq_pool_size 32 \
+    --fft_mode magnitude \
     --training_stage 1 \
     --use_lora False \
     --deepspeed FakeVLM_extended/ds_configs/zero2.json
@@ -69,6 +70,7 @@ torchrun --nproc_per_node=1 -m FakeVLM_extended.train \
     --learning_rate 2e-5 \
     --freq_extractor_name fft \
     --freq_pool_size 32 \
+    --fft_mode magnitude \
     --training_stage 2 \
     --freq_projector_checkpoint FakeVLM_extended/output/stage1/freq_projector.pt \
     --use_lora True \
@@ -94,6 +96,7 @@ python -m FakeVLM_extended.train \
     --learning_rate 1e-3 \
     --freq_extractor_name fft \
     --freq_pool_size 32 \
+    --fft_mode magnitude \
     --training_stage 1 \
     --use_lora False \
     --use_cpu True \
@@ -113,6 +116,7 @@ python -m FakeVLM_extended.train \
     --learning_rate 2e-5 \
     --freq_extractor_name fft \
     --freq_pool_size 32 \
+    --fft_mode magnitude \
     --training_stage 2 \
     --freq_projector_checkpoint FakeVLM_extended/output/stage1_test/freq_projector.pt \
     --use_lora True \

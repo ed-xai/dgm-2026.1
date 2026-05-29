@@ -1,4 +1,5 @@
-from typing import List
+from enum import Enum
+from typing import List,Callable
 
 import torch
 import torch.nn.functional as F
@@ -9,6 +10,10 @@ from PIL import Image
 from .base import BaseFrequencyExtractor
 
 
+class FFTMode(Enum):
+    MAGNITUDE = "magnitude"
+    PHASE = "phase"
+
 class FFTExtractor(BaseFrequencyExtractor):
     """Extracts log-magnitude FFT spectrum as frequency-domain features.
 
@@ -16,10 +21,16 @@ class FFTExtractor(BaseFrequencyExtractor):
     centers the DC component, takes log-magnitude, and pools to a fixed size.
     """
 
-    def __init__(self, input_size: int = 224, pool_size: int = 32):
+    _TRANSFORMS: dict[FFTMode, Callable[[Tensor], Tensor]] = {
+        FFTMode.MAGNITUDE: lambda f: torch.log1p(f.abs()),
+        FFTMode.PHASE:     lambda f: f.angle()
+    }
+
+    def __init__(self, input_size: int = 224, pool_size: int = 32, mode: str = "magnitude"):
         super().__init__()
         self._input_size = input_size
         self._pool_size = pool_size
+        self._transform = self._TRANSFORMS[FFTMode(mode)]
         self.pool = nn.AdaptiveAvgPool2d(pool_size)
 
     @property
@@ -38,6 +49,6 @@ class FFTExtractor(BaseFrequencyExtractor):
     def forward(self, x: Tensor) -> Tensor:
         freq = torch.fft.fft2(x, dim=(-2, -1))
         freq = torch.fft.fftshift(freq, dim=(-2, -1))
-        mag = torch.log1p(freq.abs())
-        pooled = self.pool(mag)
+        feature = self._transform(freq)
+        pooled = self.pool(feature)
         return pooled.flatten(1)

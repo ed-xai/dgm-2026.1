@@ -64,6 +64,10 @@ class FreqArguments:
     )
     freq_input_size: int = field(default=224)
     freq_pool_size: int = field(default=32)
+    fft_mode: str = field(
+        default="magnitude",
+        metadata={"help": "FFT mode for FFTExtractor - 'magnitude' or 'phase'"}
+    )
     num_freq_tokens: int = field(default=1)
     freq_projector_hidden_dim: Optional[int] = field(
         default=None,
