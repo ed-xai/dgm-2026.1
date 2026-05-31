@@ -9,9 +9,11 @@ FakeVLM uses CLIP-ViT to produce 576 visual tokens that are projected into Vicun
 ```
 Image --> CLIP-ViT --> 576 x 1024 --> CLIP Projector --+--> 577 x 4096 --> Vicuna 7B
                                                        |
-Image --> FreqExtractor --> 3072 --> FreqProjector -----+
-                                      1 x 4096
+Image --> FreqExtractor --> D --> FreqProjector --------+
+                                   1 x 4096
 ```
+
+where `D = 3 × pool_size²` (default 3072 with `--freq_pool_size 32`).
 
 The `ExtendedProjector` replaces the original `multi_modal_projector` and runs both branches transparently. The HuggingFace `LlavaForConditionalGeneration` forward pass is unmodified -- it sees 577 visual features instead of 576 and merges them into the text sequence via `masked_scatter`.
 
@@ -65,6 +67,12 @@ torchrun --nproc_per_node=1 -m FakeVLM_extended.train \
 ```
 
 Output: `freq_projector.pt` + trainer state in the output directory.
+
+> **`--fft_mode`** controls what is extracted from the FFT spectrum:
+> - `magnitude` *(default)* — log-magnitude (`log1p(|F|)`), captures spectral energy distribution; robust to phase noise.
+> - `phase` — raw phase angle (`angle(F)`), captures structural and edge information; sensitive to spatial alignment.
+>
+> Use the same mode in Stage 1 and Stage 2.
 
 ### Stage 2 -- Fine-tune Vicuna with LoRA + frequency projector
 
@@ -290,6 +298,10 @@ Pass `--freq_extractor_name dct` (and any extractor-specific args) to `train.py`
 
 If your extractor needs parameters beyond `input_size` and `pool_size`, add them to `FreqArguments` in `arguments.py` and pass them through in `train.py` where `get_extractor()` is called. The `get_extractor()` factory forwards all `**kwargs` to the constructor.
 
+`FreqArguments` also exposes two extractor-agnostic knobs:
+- `--num_freq_tokens` *(default 1)* — number of tokens the frequency branch contributes to the sequence. Increasing this raises `image_seq_length` proportionally.
+- `--freq_projector_hidden_dim` *(default: extractor's `output_dim`)* — hidden dimension of the projector MLP. Useful when the extractor output is large and you want a narrower bottleneck.
+
 ## File overview
 
 ```
@@ -297,7 +309,7 @@ FakeVLM_extended/
 |-- extractors/
 |   |-- __init__.py             # Registry: get_extractor(name, **kwargs)
 |   |-- base.py                 # BaseFrequencyExtractor ABC
-|   +-- fft.py                  # FFTExtractor (log-magnitude FFT spectrum)
+|   +-- fft.py                  # FFTExtractor (2D FFT; log-magnitude or phase mode)
 |-- ds_configs/
 |   +-- zero2.json              # DeepSpeed ZeRO-2 configuration
 |-- model.py                    # ExtendedProjector + extend_model()
