@@ -93,9 +93,9 @@ The FFT extractor applies the 2D DFT independently to each color channel, center
 
 The benchmarking framework supports cross-model, cross-dataset evaluation with the following metrics:
 
-- **Classification metrics**: Accuracy, AUC (Area Under the ROC Curve), F1 Score, and Average Precision.
-- **CSS (Consistency, Specificity, Selectivity)** [1]: Consistency measures agreement between the textual response and the classification decision via keyword analysis; Specificity measures the true negative rate; Selectivity measures the true positive rate.
-- **ROUGE-L**: Measures the longest common subsequence between generated explanations and reference annotations, assessing explanation quality.
+- **Classification metrics**: Accuracy and F1 Score.
+- **ROUGE-L**: Measures the longest common subsequence between generated explanations and reference annotations, assessing lexical overlap with the ground-truth annotation.
+- **CSS (Contextual Semantic Similarity)**: Measures semantic similarity between the model's generated explanation and the reference annotation using BERTScore F1 (`roberta-large`). Computed on the explanation part of the response only (the sentence following the initial real/fake verdict). Both ROUGE-L and CSS require a natural-language output and are therefore not applicable to expert binary classifiers such as NPR. Note: HuggingFace emits a benign warning about uninitialized pooler weights when loading `roberta-large`; BERTScore does not use the pooler layer and the warning can be safely ignored.
 
 Evaluation focuses on the FakeClue dataset. Additional benchmarks such as ER-FF++ and LOKI are considered for future work.
 
@@ -172,7 +172,7 @@ This revised scope produces a complete, end-to-end system from dataset annotatio
 
 ### Current Status
 
-The training framework (FakeVLM-Extended) is fully implemented and ready for execution. The benchmarking framework has its base structure implemented, including classification metrics (Accuracy, AUC, F1, Average Precision), the CSS metric [1], and ROUGE-L, but will require adjustments when actual model outputs become available. Model training has not yet started.
+The training framework (FakeVLM-Extended) is fully implemented and has been trained (Stage 1 + Stage 2 LoRA fine-tuning). The benchmarking framework is fully implemented, including classification metrics (Accuracy, F1), ROUGE-L, and CSS (BERTScore F1 on the explanation portion of responses). Evaluation of both the baseline FakeVLM and the FFT fine-tuned model against the FakeClue test sets is in progress.
 
 ## Conclusion
 
