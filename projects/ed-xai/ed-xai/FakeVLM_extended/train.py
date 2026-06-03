@@ -109,6 +109,7 @@ def train():
         freq_args.freq_extractor_name,
         input_size=freq_args.freq_input_size,
         pool_size=freq_args.freq_pool_size,
+        mode=freq_args.fft_mode,
     )
 
     llm_hidden_size = config.text_config.hidden_size

@@ -63,6 +63,7 @@ def main():
     parser.add_argument("--freq-extractor-name", default="fft")
     parser.add_argument("--freq-input-size", type=int, default=224)
     parser.add_argument("--freq-pool-size", type=int, default=32)
+    parser.add_argument("--fft-mode", default="magnitude")
     parser.add_argument("--num-freq-tokens", type=int, default=1)
     parser.add_argument("--data-path", required=True)
     parser.add_argument("--image-folder", default=None)
@@ -89,6 +90,7 @@ def main():
             args.freq_extractor_name,
             input_size=args.freq_input_size,
             pool_size=args.freq_pool_size,
+            mode=args.fft_mode,
         )
         freq_projector = FrequencyProjector(
             input_dim=freq_extractor.output_dim,
