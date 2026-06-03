@@ -40,6 +40,7 @@ Usage (control — bound mode):
         --groups control \\
         --mode bound
 """
+
 from __future__ import annotations
 
 import argparse
@@ -102,8 +103,14 @@ def parse_args() -> argparse.Namespace:
                         "filtering is IGNORED — useful for collecting auxiliary canonical "
                         "images for objects not present in any split group (Pipeline B "
                         "source pool).")
+    p.add_argument("--alias-object", nargs="+", default=None,
+                   help="Search for an alternative LAION term but record under the canonical "
+                        "object name. Format: 'alias=canonical', e.g. 'blackboard=chalkboard'. "
+                        "Search uses the alias (LAION captions contain it more often), but "
+                        "the manifest, paths, and downstream pipeline see the canonical name.")
     p.add_argument("--seed", type=int, default=42)
     return p.parse_args()
+
 
 def load_pairs(
     split_path: Path,
@@ -128,9 +135,19 @@ def load_pairs(
             pairs.append((row["object"], row["color"]))
     return pairs
 
+
 def main() -> int:
     args = parse_args()
     set_all_seeds(args.seed)
+
+    alias_map: dict[str, str] = {}
+    if args.alias_object:
+        for spec in args.alias_object:
+            if "=" not in spec:
+                print(f"[collect] ERROR: --alias-object entry {spec!r} must be 'alias=canonical'")
+                return 1
+            alias, canonical = spec.split("=", 1)
+            alias_map[alias.strip()] = canonical.strip()
 
     if args.pairs:
         pairs = []
@@ -140,6 +157,8 @@ def main() -> int:
                 return 1
             o, c = spec.rsplit(":", 1)
             pairs.append((o.strip(), c.strip()))
+        if alias_map:
+            print(f"[collect] alias map: {alias_map}")
         print(f"[collect] using explicit --pairs (ignoring --groups/--require-source filtering)")
     else:
         pairs = load_pairs(args.split, args.groups, require_source=args.require_source)
@@ -203,17 +222,21 @@ def main() -> int:
             targets.needed[(cand.object_name, cand.color)] += 1
             continue
 
+        canonical_object = alias_map.get(cand.object_name, cand.object_name)
         key = (cand.object_name, cand.color)
         idx = saved_counts[key]
-        obj_safe = cand.object_name.replace(" ", "_")
+        obj_safe = canonical_object.replace(" ", "_")
         pair_dir = args.out_root / obj_safe / cand.color
         pair_dir.mkdir(parents=True, exist_ok=True)
         img_path = pair_dir / f"cand_{idx:03d}.png"
-        img.save(img_path)
         
+        while img_path.exists():
+            idx += 1
+            img_path = pair_dir / f"cand_{idx:03d}.png"
+        img.save(img_path)
         rel_path = img_path.relative_to(args.out_root).as_posix()
         writer.writerow([
-            cand.object_name, cand.color, idx,
+            canonical_object, cand.color, idx,
             rel_path,
             cand.url, cand.original_caption[:300],
         ])
