@@ -138,7 +138,6 @@ def main() -> int:
         gradient_accumulation_steps=cfg.grad_accum_steps,
     )
     print(f"[train] accelerator device: {accelerator.device}")
-
     print(f"[train] loading {cfg.base_model_id}")
     tokenizer = CLIPTokenizer.from_pretrained(cfg.base_model_id, subfolder="tokenizer")
     text_encoder = CLIPTextModel.from_pretrained(cfg.base_model_id, subfolder="text_encoder")
@@ -201,7 +200,6 @@ def main() -> int:
         collate_fn=collate, num_workers=2, drop_last=True,
     )
     print(f"[train] {len(dataset)} training samples / {len(loader)} steps per epoch")
-
     optimizer = torch.optim.AdamW(
         trainable_params,
         lr=cfg.learning_rate,
@@ -250,14 +248,23 @@ def main() -> int:
             val_pipe.to(accelerator.device)
             images = []
             generator = torch.Generator(device=accelerator.device).manual_seed(cfg.val_seed)
-            for prompt in cfg.val_prompts:
-                img = val_pipe(
-                    prompt=prompt,
-                    num_inference_steps=cfg.val_inference_steps,
-                    guidance_scale=cfg.val_guidance,
-                    generator=generator,
-                ).images[0]
-                images.append(img)
+
+            autocast_ctx = (
+                torch.autocast(device_type="cuda", dtype=torch.bfloat16)
+                if cfg.mixed_precision == "bf16"
+                else torch.autocast(device_type="cuda", dtype=torch.float16)
+                if cfg.mixed_precision == "fp16"
+                else torch.cuda.amp.autocast(enabled=False)
+            )
+            with autocast_ctx:
+                for prompt in cfg.val_prompts:
+                    img = val_pipe(
+                        prompt=prompt,
+                        num_inference_steps=cfg.val_inference_steps,
+                        guidance_scale=cfg.val_guidance,
+                        generator=generator,
+                    ).images[0]
+                    images.append(img)
             grid_path = cfg.output_dir / "snapshots" / f"step_{step:05d}_grid.png"
             make_validation_grid(images, list(cfg.val_prompts), grid_path)
             print(f"  [val] snapshot saved → {grid_path.name}")
