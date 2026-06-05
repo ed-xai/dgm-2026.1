@@ -160,8 +160,39 @@ def main() -> int:
           f"({100 * n_trainable / n_total:.2f}%)")
 
     if cfg.gradient_checkpointing:
-        unet.gradient_checkpointing_enable()
-        text_encoder.gradient_checkpointing_enable()
+        def _enable_unet_gc(model):
+            inner = model
+            for attr in ("base_model", "model"):
+                if hasattr(inner, attr):
+                    candidate = getattr(inner, attr)
+                    if hasattr(candidate, "enable_gradient_checkpointing"):
+                        candidate.enable_gradient_checkpointing()
+                        return True
+                    inner = candidate
+            if hasattr(inner, "enable_gradient_checkpointing"):
+                inner.enable_gradient_checkpointing()
+                return True
+            return False
+
+        def _enable_text_gc(model):
+            inner = model
+            for attr in ("base_model", "model"):
+                if hasattr(inner, attr):
+                    candidate = getattr(inner, attr)
+                    if hasattr(candidate, "gradient_checkpointing_enable"):
+                        candidate.gradient_checkpointing_enable()
+                        return True
+                    inner = candidate
+            if hasattr(inner, "gradient_checkpointing_enable"):
+                inner.gradient_checkpointing_enable()
+                return True
+            return False
+
+        unet_gc_ok = _enable_unet_gc(unet)
+        text_gc_ok = _enable_text_gc(text_encoder)
+        print(f"[train] gradient checkpointing: unet={unet_gc_ok}, text_encoder={text_gc_ok}")
+        if not (unet_gc_ok and text_gc_ok):
+            print("[train] WARNING: gradient checkpointing partially disabled; OOM risk if batch is large")
 
     dataset = make_train_dataset(cfg.train_csv, cfg.resolution)
     collate = make_collate_fn(tokenizer)
@@ -187,6 +218,7 @@ def main() -> int:
     unet, text_encoder, optimizer, loader, lr_scheduler = accelerator.prepare(
         unet, text_encoder, optimizer, loader, lr_scheduler
     )
+    
     vae.requires_grad_(False)
     vae.to(accelerator.device, dtype=torch.bfloat16 if cfg.mixed_precision == "bf16" else torch.float32)
     vae.eval()
@@ -203,7 +235,6 @@ def main() -> int:
             val_scheduler = DPMSolverMultistepScheduler.from_pretrained(
                 cfg.base_model_id, subfolder="scheduler"
             )
-            
             unet_unwrapped = accelerator.unwrap_model(unet)
             text_encoder_unwrapped = accelerator.unwrap_model(text_encoder)
             val_pipe = StableDiffusionPipeline(
