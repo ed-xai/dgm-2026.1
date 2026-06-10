@@ -102,6 +102,14 @@ class CVAE(nn.Module):
         beta = beta.unsqueeze(-1).unsqueeze(-1)
         return x * (1.0 + gamma) + beta
 
+    @staticmethod
+    def _concat_skip(x, skip, skip_scale=1.0):
+        if skip is None:
+            skip = torch.zeros_like(x)
+        else:
+            skip = skip * skip_scale
+        return torch.cat([x, skip], dim=1)
+
     def _prepare_metadata(self, m):
         if m is None:
             return None
@@ -118,14 +126,6 @@ class CVAE(nn.Module):
             missing_dim = self.cond_dim - self.num_classes
             cond.append(y.new_zeros(y.size(0), missing_dim))
         return torch.cat(cond, dim=1)
-
-    @staticmethod
-    def _concat_skip(x, skip, skip_scale=1.0):
-        if skip is None:
-            skip = torch.zeros_like(x)
-        else:
-            skip = skip * skip_scale
-        return torch.cat([x, skip], dim=1)
 
     def encode(self, x, y, m=None, return_skips=False):
         x = x.view(x.size(0), self.img_channels, self.img_size, self.img_size)
