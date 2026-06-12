@@ -34,14 +34,15 @@ This project investigates whether adding a parallel frequency feature branch to 
 
 ## Objective
 
-The general objective of this project is to augment the FakeVLM framework with frequency-domain features to improve deepfake detection accuracy and the precision of artifact explainability.
+The general objective of this project is to investigate whether augmenting the FakeVLM framework with frequency-domain features can improve deepfake detection accuracy and the quality of artifact explanations on the FakeClue dataset.
 
 The specific objectives are:
 
-1. **Annotate the FakeClue dataset with frequency-domain artifact labels** by evaluating multiple pre-trained frequency-domain classifiers and selecting the best-performing model per image category.
-2. **Implement a modular training framework (FakeVLM-Extended)** that injects a parallel frequency-domain feature branch into the LLaVA 1.5 architecture, supporting pluggable frequency extractors.
-3. **Implement a benchmarking framework** for cross-model, cross-dataset evaluation with both classification and generation quality metrics.
-4. **Train and evaluate the extended model** on the augmented FakeClue dataset and compare its performance against the baseline FakeVLM (pending).
+1. **Evaluate frequency-domain classifiers on FakeClue and augment the dataset** with frequency artifact annotations by selecting the best-performing classifier per image category.
+2. **Extend FakeVLM with a parallel frequency-domain feature branch** (FakeVLM-Extended) that injects frequency tokens into the LLaVA 1.5 visual pipeline.
+3. **Train and evaluate FFT magnitude and phase variants** of the extended model on the augmented FakeClue dataset, comparing performance against the baseline FakeVLM.
+4. **Conduct an ablation study** to isolate the contribution of frequency-domain features from the effect of LoRA fine-tuning alone.
+5. **Implement a benchmarking framework** for cross-model evaluation with classification and generation quality metrics.
 
 ## Methodology
 
