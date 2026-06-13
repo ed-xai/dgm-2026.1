@@ -3,9 +3,10 @@ import json
 from pathlib import Path
 from collections import defaultdict
 
-EVALUATION_DIR = Path(__file__).parent
-OUTPUT_JSON = EVALUATION_DIR / "errors_summary.json"
-OUTPUT_RECURRENT_JSON = EVALUATION_DIR / "recurrent_errors.json"
+EVALUATION_DIR = Path(__file__).parent.parent
+RESULTS_DIR = Path(__file__).parent / "results"
+OUTPUT_JSON = RESULTS_DIR / "errors_summary.json"
+OUTPUT_RECURRENT_JSON = RESULTS_DIR / "recurrent_errors.json"
 
 LABEL_MAP = {
         0: "fake", 
