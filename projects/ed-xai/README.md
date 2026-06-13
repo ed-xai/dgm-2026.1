@@ -54,6 +54,57 @@ During the classifier evaluation, NPR [1] was also considered as a candidate for
 
 ## Methodology
 
+### Dataset: FakeClue
+
+| Dataset | Web Address | Descriptive Summary |
+|---------|-------------|---------------------|
+| FakeClue | [huggingface.co/datasets/lingcco/FakeClue](https://huggingface.co/datasets/lingcco/FakeClue) | Large-scale multimodal dataset for deepfake detection with over 100,000 images spanning seven categories, each annotated with fine-grained artifact descriptions in conversational format. |
+
+FakeClue [4] is a large-scale multimodal dataset designed for deepfake detection and artifact explanation. It contains 104,343 training and 5,000 test images across seven categories: deepfake, document, satellite, animal, human, scene, and object. The images are sourced from GenImage, FaceForensics++, Chameleon, and domain-specific collections for remote sensing and document forgeries. Labels follow the convention 0 = fake, 1 = real. Each entry contains an image path, a binary label, an image category, and a `conversations` array pairing a human question with a GPT-generated natural-language explanation that describes the visual artifacts observed in the image.
+
+<p align="center">
+  <img src="images/fakeclue_deepfake_real.png" width="110"/>
+  <img src="images/fakeclue_doc_real.jpg" width="110"/>
+  <img src="images/fakeclue_satellite_real.jpg" width="110"/>
+  <img src="images/fakeclue_animal_real.jpg" width="110"/>
+  <img src="images/fakeclue_human_real.jpg" width="110"/>
+  <img src="images/fakeclue_scene_real.jpg" width="110"/>
+  <img src="images/fakeclue_object_real.jpg" width="110"/>
+  <br>
+  <img src="images/fakeclue_deepfake_fake.png" width="110"/>
+  <img src="images/fakeclue_doc_fake.jpg" width="110"/>
+  <img src="images/fakeclue_satellite_fake.jpg" width="110"/>
+  <img src="images/fakeclue_animal_fake.png" width="110"/>
+  <img src="images/fakeclue_human_fake.png" width="110"/>
+  <img src="images/fakeclue_scene_fake.png" width="110"/>
+  <img src="images/fakeclue_object_fake.png" width="110"/>
+  <br>
+  <em>Figure 1: Example images from each FakeClue category. Top row: real images. Bottom row: fake images. From left to right: deepfake, document, satellite, animal, human, scene, object.</em>
+</p>
+
+The following examples illustrate the annotation format for a fake and a real image from the deepfake category:
+
+> **Question:** Does the image look real/fake?
+>
+> **Response (fake):** This is a fake image. The nostrils are pixelated and irregular; the skin texture is overly smooth and wax-like, especially around the cheeks and forehead; the eye region has unnatural reflections and mismatched pupil details, with one eye appearing more blurred than the other; the lip contours display bleeding colors and inconsistent texture, particularly noticeable on the upper lip; the facial contours show over-smoothed jawlines and unnatural shadow transitions; the lighting is inconsistent, with mismatched direction and floating hairs; the mouth looks too rigid to convey expressions; the chin is misaligned with other facial features; the hairlines are blurry; the shadows are unrealistic.
+
+> **Response (real):** This is a real image. The person exhibits natural skin textures, smooth skin, thin eyebrows, oval eyes, a broad nose, and a thin mouth. The nostril geometry appears natural with asymmetric shape and pore-level detail. The skin texture shows gradual tone transitions with microscopic skin imperfections. The eye reflection demonstrates physically accurate light interactions in the cornea and conjunctiva. The lip texture shows visible lip striations with a natural moisture gradient. Shadow integrity is consistent with ambient occlusion in nasal folds and facial contours. Biological signatures, such as micro-movements in facial muscles and natural blink patterns, are present. The person has complete face features in good shape, size, and positioning. The person has smooth skin, arched eyebrows, round eyes, straight nose, and full mouth.
+
+The category distribution across training and test splits is summarized below:
+
+| Category | Train Fake | Train Real | Train Total | Test Fake | Test Real | Test Total |
+|----------|-----------|-----------|------------|----------|----------|-----------|
+| deepfake | 19,166 | 4,795 | 23,961 | 932 | 236 | 1,168 |
+| object | 10,993 | 7,807 | 18,800 | 479 | 388 | 867 |
+| satellite | 9,557 | 8,568 | 18,125 | 443 | 432 | 875 |
+| animal | 7,905 | 7,380 | 15,285 | 370 | 379 | 749 |
+| doc | 9,434 | 2,608 | 12,042 | 460 | 116 | 576 |
+| human | 6,647 | 2,430 | 9,077 | 282 | 121 | 403 |
+| scene | 4,694 | 2,359 | 7,053 | 226 | 136 | 362 |
+| **Total** | **68,396** | **35,947** | **104,343** | **3,192** | **1,808** | **5,000** |
+
+The dataset is imbalanced toward fake images, which comprise 65.6% of the training split. Category sizes vary substantially, with deepfake being the largest (23,961 images) and scene the smallest (7,053 images). The fake-to-real ratio also differs by category: document has a 3.6:1 ratio, while animal and satellite are approximately 1:1. The proportional distribution is consistent between the training and test splits.
+
 ### Scope Revision
 
 The initial proposal envisioned augmenting FakeVLM with multiple feature extraction domains: spatial/structural (Xception, patch-based), statistical (NPR), physical (sensor noise patterns), spectral (frequency-domain masking), and semantic (CLIP-ViT alignment). During the exploratory phase, we determined that suitable dataset annotations were unavailable for some of these domains. We therefore narrowed the feature scope to a single frequency-domain branch while expanding the project to include a dataset annotation pipeline that produces the necessary training labels. This decision allowed us to focus on a complete, end-to-end implementation, from dataset annotation through model architecture to evaluation, rather than a broader but incomplete multi-feature system.
@@ -97,12 +148,12 @@ Training follows a two-stage approach:
 
 Generative architectures such as GANs and diffusion models introduce systematic artifacts during upsampling operations that, while often imperceptible in the spatial domain, manifest as distinctive patterns in the frequency spectrum [1, 5]. The 2D Discrete Fourier Transform (DFT) decomposes an image into its constituent spatial frequencies, making these artifacts explicit and amenable to automated analysis. This theoretical motivation underlies the choice of frequency-domain features as a complementary signal to the semantic features captured by CLIP-ViT.
 
-The FFT extractor applies the 2D DFT independently to each color channel, centers the zero-frequency (DC) component via spectral shifting, and computes the log-magnitude spectrum $\log(1 + |F(u,v)|)$. The logarithmic scaling compresses the dynamic range of the spectrum, allowing both low-frequency structural information and high-frequency detail, where generative artifacts are most prevalent, to be represented within the same feature space. The resulting spectrum is spatially pooled to produce a compact feature vector that encodes the image's frequency-domain signature. Figure 1 compares the log-magnitude FFT spectra of a real and a synthetic face image from the FakeClue dataset. While the spectra may appear similar to human inspection, the subtle distributional differences, particularly in the high-frequency components, encode discriminative information that the FrequencyProjector learns to exploit during training.
+The FFT extractor applies the 2D DFT independently to each color channel, centers the zero-frequency (DC) component via spectral shifting, and computes the log-magnitude spectrum $\log(1 + |F(u,v)|)$. The logarithmic scaling compresses the dynamic range of the spectrum, allowing both low-frequency structural information and high-frequency detail, where generative artifacts are most prevalent, to be represented within the same feature space. The resulting spectrum is spatially pooled to produce a compact feature vector that encodes the image's frequency-domain signature. Figure 2 compares the log-magnitude FFT spectra of a real and a synthetic face image from the FakeClue dataset. While the spectra may appear similar to human inspection, the subtle distributional differences, particularly in the high-frequency components, encode discriminative information that the FrequencyProjector learns to exploit during training.
 
 <p align="center">
   <img src="images/fft_comparison.png" width="500"/>
   <br>
-  <em>Figure 1: Log-magnitude FFT spectra of a real (top) and a synthetic (bottom) face image from FakeClue.</em>
+  <em>Figure 2: Log-magnitude FFT spectra of a real (top) and a synthetic (bottom) face image from FakeClue.</em>
 </p>
 
 ### Evaluation Methodology
@@ -114,29 +165,6 @@ The benchmarking framework supports cross-model, cross-dataset evaluation with t
 - **CSS (Contextual Semantic Similarity)**: Measures semantic similarity between the model's generated explanation and the reference annotation using BERTScore F1 (`roberta-large`). Computed on the explanation part of the response only (the sentence following the initial real/fake verdict). Both ROUGE-L and CSS require a natural-language output and are therefore not applicable to expert binary classifiers such as NPR. Note: HuggingFace emits a benign warning about uninitialized pooler weights when loading `roberta-large`; BERTScore does not use the pooler layer and the warning can be safely ignored.
 
 Evaluation focuses on the FakeClue dataset. Additional benchmarks such as ER-FF++ and LOKI are considered for future work.
-
-### Datasets and Evolution
-
-| Dataset | Web Address | Descriptive Summary |
-|---------|-------------|---------------------|
-| FakeClue | [github.com/wany0011/FakeClue](https://github.com/wany0011/FakeClue) | Large-scale multimodal dataset with 100K+ images spanning seven categories (deepfake, document, satellite, animal, human, scene, object). Each image is annotated with fine-grained artifact descriptions in conversational format. Labels follow the convention 0 = fake, 1 = real. |
-
-**Dataset composition.** The FakeClue training split contains 104,343 images (68,396 fake, 35,947 real) sourced from GenImage, FaceForensics++, Chameleon, and domain-specific collections for remote sensing and document images. The test split contains 5,000 images (3,192 fake, 1,808 real). Each entry includes the image path, a binary label, the image category, and a `conversations` array containing a human question and a GPT-generated response describing observed artifacts.
-
-**Frequency-domain augmentation.** After evaluating 17 frequency-domain classifiers across all seven categories, we selected the best-performing model per category based on true-positive count on fake images. The augmented dataset appends a frequency artifact sentence to the GPT response for each true-positive detection. The resulting augmented labels are stored as `train_frequency.json` (104,343 entries, 51,004 augmented) and `test_frequency.json` (5,000 entries, 2,359 augmented).
-
-The per-category coverage on the training split is summarized below:
-
-| Category | Best Model | Technique | TPs | Fake Images | Coverage |
-|----------|-----------|-----------|-----|-------------|----------|
-| deepfake | ridge_dct | DCT coefficients [5] | 19,066 | 19,166 | 99.5% |
-| satellite | spai | FFT spectral learning [6] | 8,397 | 9,557 | 87.9% |
-| object | spai | FFT spectral learning [6] | 8,304 | 10,993 | 75.5% |
-| animal | spai | FFT spectral learning [6] | 5,983 | 7,905 | 75.7% |
-| human | spai | FFT spectral learning [6] | 4,577 | 6,647 | 68.9% |
-| scene | spai | FFT spectral learning [6] | 2,892 | 4,694 | 61.6% |
-| doc | rn50\_modft\_spectralmask | Spectral masking [7] | 1,785 | 9,434 | 18.9% |
-| **Total** | | | **51,004** | **68,396** | **74.6%** |
 
 ### Workflow
 
