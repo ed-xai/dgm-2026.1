@@ -190,20 +190,6 @@ All models are evaluated on the FakeClue test set (5,000 images) using the same 
 
 The evaluation compares three model configurations. The baseline is the original FakeVLM evaluated on the original FakeClue test set without any fine-tuning. The two extended models (FakeVLM-Extended with FFT magnitude features and FakeVLM-Extended with FFT phase features) are evaluated on the augmented FakeClue test set, assessing the combined effect of frequency-domain features and label augmentation.
 
-### Workflow
-
-<img src="images/freqClassifier_Eval.png" width="600"/>
-
-<img src="images/fakevlm_extended.png" width="600"/>
-
-<img src="images/benchmark-eval.png" width="600"/>
-
-The project follows a three-stage pipeline:
-
-1. **Frequency classifier evaluation and label augmentation.** Run 17 pre-trained classifiers on FakeClue, select the best per category, and augment the dataset labels with frequency artifact annotations.
-2. **FakeVLM-Extended training.** Stage 1: train the frequency projector with all other parameters frozen. Stage 2: fine-tune with LoRA adapters on the language model.
-3. **Benchmarking evaluation.** Evaluate the trained model against the baseline FakeVLM using classification and generation quality metrics.
-
 ## Experiments, Results, and Discussion
 
 ### Frequency Classifier Evaluation
