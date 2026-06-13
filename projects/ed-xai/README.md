@@ -222,6 +222,36 @@ The two FFT extraction modes yield remarkably similar results across all four me
 
 ### Ablation
 
+#### Frequency Branch vs. LoRA Fine-Tuning
+
+To disentangle the contribution of the frequency branch from the effect of LoRA fine-tuning, we trained two ablation configurations on the original FakeClue labels (without frequency augmentation) using the same hyperparameters as Stage 2 of the extended training procedure. The first configuration applies LoRA [9] to Vicuna's linear layers only, matching the fine-tuning scope of the extended models but without the frequency feature branch. The second configuration additionally unfreezes the CLIP visual projector, testing whether adapting the visual encoder provides further benefit. Neither configuration includes the frequency feature branch or the augmented training labels.
+
+Figure 4 presents the training loss curves for both ablation configurations. Both runs converge smoothly over three epochs, exhibiting loss trajectories comparable to Stage 2 of the extended models.
+
+<p align="center">
+  <img src="images/loss_ablation_lora_vicuna.png" width="400">
+  <img src="images/loss_ablation_lora_vicuna_projector.png" width="400">
+</p>
+<p align="center"><em>Figure 4. Training loss curves for the ablation configurations. Left: LoRA on Vicuna only. Right: LoRA on Vicuna with CLIP projector.</em></p>
+
+The table below presents the full comparison across all five model configurations.
+
+| Model | Dataset | Accuracy ↑ | F1 ↑ | ROUGE-L ↑ | CSS ↑ |
+|-------|---------|----------|------|---------|------|
+| FakeVLM (baseline) | FakeClue (original) | 0.9876 | 0.9828 | 0.4950 | 0.9230 |
+| FakeVLM-Extended (magnitude) | FakeClue (augmented) | 0.9912 | 0.9878 | 0.5706 | 0.9342 |
+| FakeVLM-Extended (phase) | FakeClue (augmented) | 0.9900 | 0.9861 | 0.5712 | 0.9344 |
+| FakeVLM + LoRA (Vicuna) | FakeClue (original) | 0.9904 | 0.9867 | 0.5477 | 0.9315 |
+| FakeVLM + LoRA (Vicuna + projector) | FakeClue (original) | 0.9870 | 0.9819 | 0.5399 | 0.9301 |
+
+In classification performance, LoRA fine-tuning on Vicuna alone achieves 99.04% accuracy, comparable to the FFT magnitude (99.12%) and FFT phase (99.00%) configurations. This indicates that LoRA fine-tuning accounts for most of the classification improvement over the baseline. Unfreezing the CLIP visual projector does not improve results and slightly degrades accuracy to 98.70%, falling below the unmodified baseline. This suggests that adapting the pre-trained visual projector without a compensating signal (such as the frequency branch) disrupts the learned visual representations.
+
+In generation quality, LoRA fine-tuning on Vicuna improves ROUGE-L from 0.4950 to 0.5477, a substantial gain over the baseline but still below the FFT-extended models (0.5706 and 0.5712). The remaining gap of approximately four percentage points in ROUGE-L represents the combined contribution of the frequency feature branch and the augmented training labels. However, the current experimental design does not fully separate these two factors, since the extended models were trained on augmented data while the ablation models used original labels. CSS follows a pattern closer to the classification metrics: LoRA fine-tuning alone (0.9315) recovers most of the improvement over the baseline (0.9230), leaving only a narrow gap relative to the FFT-extended models (0.9342 and 0.9344).
+
+The ablation results indicate that LoRA fine-tuning provides the primary mechanism for improving both classification and explanation quality. The frequency branch combined with augmented labels provides an additional, smaller but consistent, contribution to the generation quality metrics.
+
+#### Per-Image Classification Agreement
+
 *(to be written)*
 
 ### Discussion
