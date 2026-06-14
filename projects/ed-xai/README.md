@@ -44,12 +44,12 @@ The specific objectives are:
 4. **Conduct an ablation study** to isolate the contribution of frequency-domain features from the effect of LoRA fine-tuning alone.
 5. **Implement a benchmarking framework** for cross-model evaluation with classification and generation quality metrics.
 
-Figure 2 summarizes the project workflow across three phases. Phase 1 evaluates 17 frequency-domain classifiers on FakeClue and uses the best-performing classifier per category to selectively augment the training labels. Phase 2 trains the extended model in two stages: first the frequency projector in isolation, then the projector jointly with LoRA adapters on the language model. Phase 3 evaluates all model configurations against the baseline using the benchmarking framework.
+Figure 1 summarizes the project workflow across three phases. Phase 1 evaluates 17 frequency-domain classifiers on FakeClue and uses the best-performing classifier per category to selectively augment the training labels. Phase 2 trains the extended model in two stages: first the frequency projector in isolation, then the projector jointly with LoRA adapters on the language model. Phase 3 evaluates all model configurations against the baseline using the benchmarking framework.
 
 <p align="center">
   <img src="images/workflow.png" width="700"/>
   <br>
-  <em>Figure 2: FakeVLM-Extended project workflow. Phase 1 augments FakeClue labels using frequency-domain classifiers, Phase 2 trains the extended model in two stages, and Phase 3 evaluates all configurations against the baseline.</em>
+  <em>Figure 1: FakeVLM-Extended project workflow. Phase 1 augments FakeClue labels using frequency-domain classifiers, Phase 2 trains the extended model in two stages, and Phase 3 evaluates all configurations against the baseline.</em>
 </p>
 
 ## Related Work
@@ -87,7 +87,7 @@ FakeClue [4] is a large-scale multimodal dataset designed for deepfake detection
   <img src="images/fakeclue_scene_fake.png" width="110"/>
   <img src="images/fakeclue_object_fake.png" width="110"/>
   <br>
-  <em>Figure 1: Example images from each FakeClue category. Top row: real images. Bottom row: fake images. From left to right: deepfake, document, satellite, animal, human, scene, object.</em>
+  <em>Figure 2: Example images from each FakeClue category. Top row: real images. Bottom row: fake images. From left to right: deepfake, document, satellite, animal, human, scene, object.</em>
 </p>
 
 The following examples illustrate the annotation format for a fake and a real image from the deepfake category:
