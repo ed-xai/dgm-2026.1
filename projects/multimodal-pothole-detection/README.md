@@ -504,6 +504,26 @@ To accommodate the two-month deadline, the project will follow an 8-week schedul
 
 ## Bibliographic References
 
+[1] Confederação Nacional do Transporte (CNT), "Pesquisa CNT de Rodovias 2024", Brasília, Brazil, 2024.
+
+[2] American Society of Civil Engineers (ASCE), "Infrastructure Report Card", 2021.
+
+[3] Confederação Nacional do Transporte (CNT), Road Safety and Economic Impact Reports, 2024.
+
+[4] Puente, I., González-Jorge, H., Martínez-Sánchez, J., and Arias, P., "Review of Mobile Mapping and LiDAR Technologies for Road Inspection", Measurement, vol. 90, pp. 222–231, 2016.
+
+[5] Maeda, H., Sekimoto, Y., Seto, T., Kashiyama, T., and Omata, H., "Road Damage Detection Using Deep Neural Networks with Images Captured Through a Smartphone", arXiv:1801.09454, 2018.
+
+[6] Fan, R., Ai, Y., and Dahnoun, N., "Road Surface 3D Reconstruction Based on Dense Subpixel Disparity Map Estimation", IEEE Transactions on Image Processing, 2019.
+
+[7] Shahin, M. Y., Pavement Management for Airports, Roads, and Parking Lots, Springer, 2005.
+
+[8] Grigorescu, S., Trasnea, B., Cocias, T., and Macesanu, G., "A Survey of Deep Learning Techniques for Autonomous Driving", Journal of Field Robotics, vol. 37, no. 3, pp. 362–386, 2020.
+
+[9] Nichol, A., Jun, H., Dhariwal, P., Mishkin, P., and Chen, M., "Point-E: A System for Generating 3D Point Clouds from Complex Prompts", OpenAI, 2022.
+
+[10] Zhou, Q.-Y., Park, J., and Koltun, V., "Open3D: A Modern Library for 3D Data Processing", arXiv:1801.09847, 2018.
+
 BASTICO, Matteo, et al. Rethinking Metrics and Diffusion Architecture for 3D Point Cloud Generation. En Thirteenth International Conference on 3D Vision. 2026. Available at: https://arxiv.org/abs/2511.05308
 
 FAN, Rui, et al. Rethinking road surface 3-D reconstruction and pothole detection: From perspective transformation to disparity map segmentation. IEEE Transactions on Cybernetics, 2021, vol. 52, no 7, p. 5799-5808. Available at: https://arxiv.org/abs/2012.10802
