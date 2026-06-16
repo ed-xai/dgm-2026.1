@@ -291,7 +291,7 @@ The ICP algorithm minimized the distances between corresponding points after reg
 #### Stage 5: Accuracy Calculation
 The reconstruction accuracy was quantified using the Root Mean Squared Closest Distance Error (RMSE):
 <p align="center">
-  <img src="images/RGB_Segmentation_Data.png" width="900">
+  <img width="432" height="147" alt="RMSE" src="https://github.com/user-attachments/assets/f95c715e-6554-4d97-9e21-b6ec2cde6ab3" />
 </p>
 
 #### The block diagram of our proposed road pothole detection system.
