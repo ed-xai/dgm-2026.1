@@ -109,9 +109,61 @@ To implement the aforementioned pipelines within the project's timeframe, we wil
 |**PothRGDB** | [Kaggle](https://www.kaggle.com/datasets/mahyeks/pothrgbd-rgb-and-depth-images-of-potholes) | Provides 1,000 paired RGB and depth (2.5D) images with YOLO annotations captured using an Intel RealSense camera as the primary dataset.|
 |**Rui Fan's Stereo Pothole** | [Rui Fan GitHub](https://github.com/ruirangerfan/rethinking_road_reconstruction_pothole_detection) | Contains 79 pothole instances with high-precision 3D ground truth obtained from laser-scanned gypsum molds|
 
-#### Analysis and Preprocessing
-- **PothRGDB (Primary Training & Tuning):** Utilizing the camera model intrinsic parameters, we mapped algebraic back-projection to convert depth maps into 3D point clouds. An Exploratory Data Analysis (EDA) on 998 unique samples revealed that while the central tendency indicates moderate potholes (median volume ~4.5L, median max-depth ~72mm), the dataset occasionally suffers from extreme physical sensor artifacts. Over 100 samples were flagged as implausible outliers (e.g., reported depths 5000mm) typically caused by water reflections and harsh shadows. To prevent corrupt learning, applying log-scale IQR outlier thresholds is essential to curate the training data. This dataset provides the necessary volume to learn the general distribution of road anomalies.
-- **Rui Fan's Dataset (Testing & Validation):** Due to its limited size (79 samples) but absolute structural fidelity (achieving an RMSE of 2.23 mm), this dataset is incredibly valuable. It will be strictly reserved as an independent gold-standard test set for the final geometric evaluation to prove the pipeline's capabilities.
+### 3.1 PothRGDB: Primary Training Dataset
+
+**Authorship and Affiliations**
+
+The PothRGDB dataset and its accompanying research were developed by:
+
+• Mustafa YURDAKUL (Kırıkkale University, Computer Engineering Department, Kırıkkale, Turkey)
+
+• Şakir TAŞDEMİR (Selçuk University, Computer Engineering Department, Konya, Turkey)
+
+PothRGDB is a paired RGB and depth dataset of potholes, captured with an Intel RealSense D415 active stereo depth camera. Each sample provides:
+
+- A full-frame RGB image of a road surface with one or more potholes.
+- A paired 16-bit depth map aligned with the RGB frame.
+- A YOLO-format bounding box annotation identifying the pothole region.
+
+The dataset contains 998 sample entries in the manifest. After integrity checking, 996 are valid. The batch EDA pipeline processed 992 of those successfully; 4 failed due to empty masks or unstable road-surface estimation.
+
+**Dataset Collection Setup**
+
+A portable system was meticulously designed to collect depth and RGB image data of potholes from various road surfaces. The system's architecture emphasizes mobility and efficiency, comprising key components integrated for seamless data acquisition [1].
+
+
+
+Key EDA metrics computed from the full dataset:
+
+| Metric | Median | 95th Percentile |
+|---|---|---|
+| Volume (cm³) | 4,464 | 93,571 |
+| Max depth (mm) | 72 | 522 |
+| Mask fraction | 0.209 | 0.501 |
+| Missing depth fraction (mean) | - | 1.67% |
+
+The volume and depth distributions follow a heavy-tailed, approximately log-normal shape. Outlier detection was performed on log-transformed values (IQR on log-volume and log-depth) to avoid incorrectly discarding genuinely large potholes as artifacts. A total of 29 samples were flagged as physically implausible (depths exceeding 5,000 mm or volumes exceeding 1,000,000 cm³), driven by sensor failures. The two most extreme cases, one showing depths consistent with water-reflection failure (reported depth over 64 m) and another with harsh-shadow failure (reported depth over 63 m), illustrate the failure modes described above.
+
+After filtering and manual review of prepared 3D point clouds, the final training set contains **975 samples**.
+
+#### Calibration Limitations
+
+Converting a depth map into a 3D point cloud requires **camera intrinsic parameters**: the focal lengths (how much the lens magnifies the scene) and the principal point (the pixel coordinates of the optical center). Together, these four numbers define the mapping from a pixel location and its measured depth to a real-world 3D coordinate; without them, the reconstructed geometry can be systematically scaled or skewed.
+
+PothRGDB does not provide per-device intrinsics. Because the dataset was collected with Intel RealSense D415 cameras, we use the typical factory intrinsics published by Intel for that model as a reasonable approximation. However, every physical camera differs slightly from the factory nominal values due to manufacturing variation and mounting geometry, and field measurements such as this dataset can deviate further. This means that the absolute metric values we compute (depth in cm, volume in cm³) may carry a systematic scale error that is the same across all samples but cannot be corrected without knowing the true per-device calibration.
+
+In practice this means: relative comparisons between samples are meaningful, but the absolute numbers should be interpreted as estimates, not ground-truth measurements. This limitation is explicitly acknowledged throughout the evaluation, and all severity thresholds were chosen to be well-separated enough that small calibration errors do not move samples across bin boundaries.
+
+### 3.2 Rui Fan Stereo Pothole Dataset: Held-Out Evaluation Benchmark
+
+The Rui Fan dataset provides high-precision 3D ground truth for pothole evaluation. Three synthetic gypsum molds (model1, model2, model3) were scanned with a laser profilometer, achieving RMSE of 2.23 mm. Each model folder contains:
+
+- Left-camera PNG images from multiple viewpoints.
+- Ground-truth PLY files, one per section of the cast.
+
+The benchmark subset used for evaluation (`rethinking_road_reconstruction_pothole_detection-main/dataset/`) contains 54 PNG images and 13 PLY files across 3 model folders, yielding 27 prepared evaluation samples after the benchmark preparation pipeline is applied.
+
+This dataset was kept strictly separate from training data throughout the entire project. It acts as a held-out test contract: it is never used to select hyperparameters, tune augmentation probabilities, or choose checkpoints.
 
 ### Workflow
 
