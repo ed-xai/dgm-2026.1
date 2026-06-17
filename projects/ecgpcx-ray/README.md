@@ -500,7 +500,33 @@ The final CVAE experiment uses the convolutional implementation in `models/cvae_
 
 To reduce class imbalance, the training set was downsampled to a 50:1 ratio of healthy to pneumonia images, resulting in a total of 11,475 samples.
 
-### 2.2 Training Loss Behavior
+### 2.2 Training
+
+**Baseline CVAE**
+
+The training was run for 300 epochs, with the final checkpoint saved at epoch 299. The final notebook output reports:
+
+| Metric | Epoch 0 | Epoch 299 |
+|---|---:|---:|
+| Total Training loss | 0.046 | 0.012 |
+| Training reconstruction loss | 0.040 | 0.012 |
+| Total Validation loss | 0.036 | 0.014 |
+| Validation reconstruction loss | 0.030 | 0.014 |
+| Training KL divergence | 43.155 | 609.191 |
+| Validation KL divergence | 46.102 | 611.220 |
+
+The reconstruction loss decreased throughout training and stabilized near the end, indicating that the CVAE learned to reconstruct the overall structure of the chest X-ray images. The validation loss remained close to the training loss, suggesting limited overfitting in this experiment. The KL divergence increased during training, which is expected as the latent space becomes more informative and captures more variation in the data. Since the KL term is weighted by the β parameter, the total loss remains primarily influenced by the reconstruction term.
+
+**Mask-Guided CVAE**
+
+| Metric | Epoch 0 | Epoch 73 |
+|---|---:|---:|
+| Total Training loss | 0.404 | 0.018 |
+| Training reconstruction loss | 0.028 | 0.003 |
+| Total Validation loss | 0.151 | 0.019 |
+| Validation reconstruction loss | 0.011 | 0.003 |
+| Training KL divergence | 116.525 | 0.020 |
+| Validation KL divergence | 88.609 | 0.077 |
 
 ![CVAE Loss behavior](training-results/cvae/loss-behavior.png)
 
@@ -514,7 +540,7 @@ Example reconstruction outputs:
 
 ![CVAE reconstruction epoch 73](training-results/cvae/results/reconstruction_73.png)
 
-### 2.3 Counterfactual Generation
+### 2.3 Generation and Results
 
 After training, counterfactual images were generated for the complete test set by flipping the input class condition:
 
@@ -525,7 +551,44 @@ The latent representation was extracted from the original image and decoded usin
 
 In total, **9,021 original images** and **9,021 counterfactual images** were evaluated.
 
-### 2.4 Qualitative Evaluation
+**Baseline CVAE**
+
+**Counterfactual image generation examples**
+
+![CVAE Counterfactual examples](training-results/cvae_e2/results/generation_examples.png)
+
+The figure above shows 4 example pairs for each translation direction. Blue borders denote real (input) images while red borders denote generated counteerfactual (output) images.
+
+The generated examples preserve the main anatomical layout of the input X-rays, including the lung fields, rib cage, and cardiac silhouette. The changes introduced by the CVAE are subtle, which is desirable for counterfactual explanations, but the generated outputs are also smoother than the original images. This suggests that the model is capturing global structure more strongly than fine radiological texture, losing the sharpness of the images and making it difficult to identify aspects like bones or artifacts in the images.
+
+**Counterfactual change heatmaps**
+
+![CVAE Change Heatmap](training-results/cvae_e2/results/cvae_change_heatmap_008.png)
+
+The heatmaps show the absolute pixel-level differences between each original image and its generated counterfactual. Brighter regions indicate where the CVAE changed the image more strongly.
+
+The changes are not uniformly distributed across the full image, which supports the counterfactual goal of localized modifications rather than arbitrary global shifts. However, some highlighted regions are diffuse and may include areas outside the most clinically relevant lung regions, so these maps should still be interpreted as qualitative evidence and compared with classifier-based explanations in future experiments.
+
+**Quantitative Evaluation**
+
+| Metric | Value |
+|---|---:|
+| Number of SSIM pairs | 9,425 |
+| Mean SSIM | 0.8190 |
+| SSIM standard deviation | 0.0503 |
+| Minimum SSIM | 0.3929 |
+| Maximum SSIM | 0.9544 |
+| Number of counterfactual images | 9,425 |
+| Number of reference images | 9,425 |
+| FID | 136.5358 |
+
+The mean SSIM of 0.8190 indicates that the generated counterfactuals preserved most of the original image structure, which is important since counterfactual explanations should mainly modify disease-related regions while maintaining anatomical consistency. However, the minimum SSIM value of 0.3929 indicates that some generated samples differed substantially from the original images and may require individual inspection.
+
+The FID score of 136.5358 indicates a noticeable distributional difference between the generated counterfactuals and the reference images. This is consistent with a common limitation of VAE-based image generation, where reconstructed images preserve global anatomy but may appear smoother or less realistic than real chest X-rays. Overall, the CVAE provides a useful baseline for counterfactual generation, although further refinement or comparison with models such as CycleGAN may improve image realism.
+
+---
+
+**Mask-Guided CVAE**
 
 ![CVAE Change Heatmap](training-results/cvae/results/change_heatmaps/cvae_change_heatmap_002.png)
 
@@ -539,7 +602,7 @@ Observed behavior:
 
 Overall, the heatmaps provide a concise qualitative check: they confirm the CVAE produces anatomically consistent, localized modifications, but the visual changes are often too subtle to unambiguously represent strong pathological features on their own.
 
-### 2.5 Quantitative Evaluation
+**Quantitative Evaluation**
 
 
 **SSIM and FID**
@@ -559,29 +622,19 @@ The mean SSIM of 0.9945 indicates that the generated counterfactuals preserve im
 
 The FID score of 2.8795 is very low, suggesting the generated images are close to the real-image distribution according to the Inception-based feature space used for FID. Important caveats apply: FID is sensitive to dataset size, preprocessing, and the choice of features (and can be artificially low when generation is overly conservative, which is probably the case here). Given the high SSIM and the CVAE's tendency toward smooth reconstructions, the low FID here likely reflects strong anatomical preservation rather than the introduction of realistic, high-frequency pathological texture. Therefore, interpret FID together with visual checks and classifier-facing metrics rather than as definitive proof of clinical realism.
 
-**Flip Rate and Confidence Change**
+---
 
-|Healthy $\rightarrow$ Pneumonia | Value |
-|---|---|
-|Pairs evaluated | 8978 |
-| Flip rate | 0.011 (102/8978) |
-| $\Delta$ Confidence | -0.002 $_-^+$ 0.037 |
-| Mean P (original) | 0.313 |
-| Mean P (translated) | 0.311 |
+**Comparison: Baseline vs Mask-Guided**
 
-|Pneumonia $\rightarrow$ Healthy | Value |
-|---|---|
-|Pairs evaluated | 43 |
-| Flip rate | 0.047 (2/43) |
-| $\Delta$ Confidence | -0.011 $_-^+$ 0.041 |
-| Mean P (original) | 0.499 |
-| Mean P (translated) | 0.488 |
+| Metric | Baseline | Mask-Guided | Delta |
+|---|---|---|---|
+| H→P FID ↓ | 136.5925 | 2.8839 | -133.7086 |
+| P→H FID ↓ | 222.6104 | 15.6049 | -207.0055 |
+| Mean FID ↓ | 179.6014 | 9.2444 | -170.357 |
+| H→P SSIM ↑ | 0.8191 | 0.9945 | +0.1754 |
+| P→H SSIM ↑ | 0.8095 | 0.9944 | +0.1849 |
 
-![CVAE counterfactuals - CheXNet evaluation](training-results/cvae/cvae-counterfactuals-chexnet.jpeg)
-
-Both ways (healthy to pneumonia and pneumonia to healthy) demonstrate a similar result. On H→P direction, classifier's pneumonia probability changed from 0.313 to 0.311 (mean Δ = -0.002, std ≈ 0.037), and on P→H direction, mean probability fell from 0.499 to 0.488 (mean Δ = -0.011, std ≈ 0.041). This indicates that counterfactuals rarely flipped the classifier toward the other way and produced negligible average confidence increases - in fact a slight average decrease - showing the generated changes are typically too weak to alter classifier decisions.
-
-Low flip rates and near-zero mean confidence changes show the CVAE preserves anatomy but produces subtle modifications that rarely change model predictions. This supports the qualitative observation that reconstructions are smooth and localized.
+Empirically, the two CVAE variants show a clear trade-off. The baseline CVAE produced larger visible changes but achieved lower structural similarity and realism metrics (mean SSIM = 0.8190, FID = 136.54), meaning reconstructions are smoother and distributionally farther from real X-rays. The mask-guided CVAE, which explicitly injects lung masks and applies mask-weighted reconstruction losses, preserved anatomy far better (mean SSIM = 0.9945, min SSIM = 0.8794) and obtained a much lower FID (2.88). However, the very high SSIM and low FID for the mask-guided model indicate generation that is extremely conservative—changes are tightly localized to lung fields but often subtle, which can reduce the strength of observable pathological cues and limit classifier-flipping power. In short: mask-guidance substantially improves anatomical fidelity and localization of edits, while the baseline CVAE produces more noticeable (but less anatomically faithful) modifications; selecting between them depends on whether the goal prioritizes localized, anatomically consistent counterfactuals (mask-guided) or stronger visual edits that may better affect classifier output (baseline).
 
 ## Experiment 3: CycleGAN Training
 
@@ -720,14 +773,6 @@ The near-zero flip rates and negligible confidence shifts indicate the model pri
 - Overly aggressive spatial regularization via skip connections that preserve anatomy at the expense of disease representation.
 - VAE-inherent tendency toward smooth, conservative reconstructions.
 
-**Conclusion:**
-
-While the CVAE demonstrates solid architectural design for image reconstruction, it is **unsuitable for counterfactual generation**. A counterfactual explanation model must introduce semantically meaningful changes that (1) alter downstream model predictions, (2) appear visually convincing to domain experts, and (3) represent plausible transitions between domains. The CVAE fails on all three counts: flip rates are negligible, changes are imperceptible, and the model produces no compelling evidence of pathological transformation.
-
-**Implications for Future Work:**
-
-To achieve effective counterfactual generation, alternative approaches should be explored: (1) weaken anatomical constraints to permit stronger domain shifts, (2) employ adversarial or diffusion-based methods that prioritize visual realism and semantic change over reconstruction fidelity, or (3) combine CVAE's anatomical strengths with a separate pathology-injection module. The current CVAE architecture trades counterfactual quality for stability, making it better suited for anatomical-preserving reconstruction tasks than for medical counterfactual explanation.
-
 ### CycleGAN
 
 The choice of CycleGAN as the translation backbone was motivated by its ability to train on **unpaired data**, which is a realistic constraint in clinical settings where matched healthy/pneumonia images from the same patient are rarely available. The cycle consistency constraint is particularly well-suited to the counterfactual generation goal since it enforces that only disease-relevant features are modified, while preserving the underlying anatomy of the patient.
@@ -751,6 +796,14 @@ Main limitations and future direction of the CycleGAN include:
 This work presented a generative framework for counterfactual image generation in chest X-rays, combining a CVAE and a CycleGAN trained on the NIH Chest X-ray dataset to translate images between healthy and pneumonia domains. The CVAE produced anatomically consistent counterfactuals (mean SSIM 0.82) but with limited realism (FID 136.5), while the CycleGAN achieved sharper translations (mean FID 115.3) though with residual artifacts. A downstream binary classifier was trained, with the best model reaching a test AUC of 0.67, insufficient to reliably assess counterfactual validity.
 
 Remaining challenges include class imbalance, image resolution, and the need for classifier-grounded explainability evaluation. Future work will increase image resolution to 256×256, refine model architectures, augment the training set with synthetic images to improve classifier performance, and use the improved classifier to validate counterfactual generation and support explainability through difference maps and Grad-CAM comparisons.
+
+**Conclusion:**
+
+While the CVAE demonstrates solid architectural design for image reconstruction, it is **unsuitable for counterfactual generation**. A counterfactual explanation model must introduce semantically meaningful changes that (1) alter downstream model predictions, (2) appear visually convincing to domain experts, and (3) represent plausible transitions between domains. The CVAE fails on all three counts: flip rates are negligible, changes are imperceptible, and the model produces no compelling evidence of pathological transformation.
+
+**Implications for Future Work:**
+
+To achieve effective counterfactual generation, alternative approaches should be explored: (1) weaken anatomical constraints to permit stronger domain shifts, (2) employ adversarial or diffusion-based methods that prioritize visual realism and semantic change over reconstruction fidelity, or (3) combine CVAE's anatomical strengths with a separate pathology-injection module. The current CVAE architecture trades counterfactual quality for stability, making it better suited for anatomical-preserving reconstruction tasks than for medical counterfactual explanation.
 
 # Ethical considerations
 
