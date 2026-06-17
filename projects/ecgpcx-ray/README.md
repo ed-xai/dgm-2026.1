@@ -26,9 +26,7 @@ offered in the **first semester of 2026 (2026.1)**, at Unicamp, under the superv
 
 # Abstract
 
-> Update
-
-This project investigates counterfactual generation for pneumonia in chest X-rays using the NIH Chest X-ray dataset. We built patient-level splits, trained classifier baselines, and implemented two generative models: a metadata-conditioned CVAE and an unpaired CycleGAN. Classifier baselines showed limited discriminative performance under severe class imbalance, with the best test AUC reaching 0.6668. The CVAE preserved structure well (SSIM = 0.8190) but had limited realism (FID = 136.5358), while CycleGAN produced sharper translations with lower mean FID (115.34). Results suggest counterfactual generation is feasible, but classifier validity and clinical plausibility remain open challenges.
+This project investigates counterfactual generation for pneumonia detection in chest X-rays using the NIH dataset. We implemented a CVAE and CycleGAN trained on patient-level splits to translate images between healthy and pneumonia domains. The CVAE achieved superior anatomical preservation (SSIM 0.9945, FID 2.88) but failed at counterfactual generation (flip rate 2.6%). CycleGAN demonstrated substantially higher classifier-facing validity with 5.6× higher flip rates (14.6%) and stronger confidence shifts. Results demonstrate that CycleGAN is the superior approach for medical counterfactual explanation, though classifier reliability and clinical validation remain open challenges.
 
 # Problem Description / Motivation
 
@@ -339,8 +337,8 @@ The project no longer includes a separate visual attribution component. Instead,
 
 $$
 FlipRate=
-\frac{\#\text{successful class changes}}
-{\#\text{counterfactuals}}
+\frac{\text{\#successful class changes}}
+{\text{\#counterfactuals}}
 $$
 
 - **Confidence change**: measures how much the classifier's confidence in the target class increases after generating the counterfactual.
@@ -466,7 +464,7 @@ To reduce class imbalance, the training set was downsampled to a 50:1 ratio of h
 
 ### 2.2 Training
 
-**Baseline CVAE**
+#### Baseline CVAE
 
 The training was run for 300 epochs, with the final checkpoint saved at epoch 299. The final notebook output reports:
 
@@ -481,7 +479,7 @@ The training was run for 300 epochs, with the final checkpoint saved at epoch 29
 
 The reconstruction loss decreased throughout training and stabilized near the end, indicating that the CVAE learned to reconstruct the overall structure of the chest X-ray images. The validation loss remained close to the training loss, suggesting limited overfitting in this experiment. The KL divergence increased during training, which is expected as the latent space becomes more informative and captures more variation in the data. Since the KL term is weighted by the β parameter, the total loss remains primarily influenced by the reconstruction term.
 
-**Mask-Guided CVAE**
+#### Mask-Guided CVAE
 
 | Metric | Epoch 0 | Epoch 73 |
 |---|---:|---:|
@@ -515,7 +513,7 @@ The latent representation was extracted from the original image and decoded usin
 
 In total, **9,021 original images** and **9,021 counterfactual images** were evaluated.
 
-**Baseline CVAE**
+#### Baseline CVAE
 
 **Counterfactual image generation examples**
 
@@ -552,9 +550,9 @@ The FID score of 136.5358 indicates a noticeable distributional difference betwe
 
 ---
 
-**Mask-Guided CVAE**
+#### Mask-Guided CVAE
 
-![CVAE Change Heatmap](training-results/cvae/results/change_heatmaps/cvae_change_heatmap_002.png)
+![CVAE Change Heatmap](training-results/cvae/results/cvae_change_heatmap_002.png)
 
 The figure shows four example input/output pairs (blue = real input, red = generated counterfactual) with corresponding change heatmaps. Heatmaps visualize the absolute per-pixel difference between the original and the generated image; brighter pixels indicate larger changes.
 
@@ -567,7 +565,6 @@ Observed behavior:
 Overall, the heatmaps provide a concise qualitative check: they confirm the CVAE produces anatomically consistent, localized modifications, but the visual changes are often too subtle to unambiguously represent strong pathological features on their own.
 
 **Quantitative Evaluation**
-
 
 **SSIM and FID**
 
@@ -588,7 +585,7 @@ The FID score of 2.8795 is very low, suggesting the generated images are close t
 
 ---
 
-**Comparison: Baseline vs Mask-Guided**
+#### Comparison: Baseline vs Mask-Guided
 
 | Metric | Baseline | Mask-Guided | Delta |
 |---|---|---|---|
@@ -825,7 +822,7 @@ For each source two variants are tested:
 - *Flipped-only* — only images that already fool the frozen CheXNet oracle (i.e., P(pneumonia) crosses the Youden threshold after translation) are added. This acts as a quality filter, keeping only the most convincing synthetic positives.
 
 | Notebook | Synthetic source | Selection | Test AUC-ROC | Test PR-AUC | Test Acc (Youden) |
-|---|---|---|---|---|---|---|---|
+|---|---|---|---|---|---|
 | [2.0.1](notebooks/2.0.1-finetune_chexnet_synthetic.ipynb) | CycleGAN | All H→P |  0.6863 | 0.0135 | 0.5207 |
 | [2.0.2](notebooks/2.0.2-finetune_chexnet_synthetic_only_flipped.ipynb) | CycleGAN | Flipped only | 0.6659 | 0.0132 | 0.6676 |
 | [2.1.1](notebooks/2.1.1-finetune_chexnet_synthetic_cvae.ipynb) | CVAE | All H→P | 0.6731 | 0.0074 | 0.5630 |
@@ -899,20 +896,9 @@ Main limitations and future direction of the CycleGAN include:
 
 # Conclusion
 
-> In the final project submission (D3), the conclusion is expected to outline, among other aspects, possibilities for the project’s continuation.
-> Can talk about enhance models, use diffusion or something like a cvae+cycleGAN. Can talk about explainability.
+This work presented a generative framework for counterfactual image generation in chest X-rays, comparing two distinct approaches: a CVAE and a CycleGAN, both trained on the NIH Chest X-ray dataset to translate images between healthy and pneumonia domains. While the CVAE achieved superior anatomical preservation (mean SSIM 0.9945, FID 2.88), it fundamentally failed as a counterfactual generation tool, demonstrating near-zero classifier flip rates (H→P: 2.6%, P→H: 4.7%) and imperceptible changes to classifier confidence. In contrast, CycleGAN, despite slightly lower SSIM scores, emerged as the superior method for counterfactual generation due to its substantially higher classifier-facing validity: it achieved 5.6× higher flip rates for the critical H→P translation (14.6% vs. 2.6%) and stronger confidence shifts (ΔP = 0.047 vs. −0.002). These classifier-based metrics directly reflect the core objective of counterfactual explanation—to generate images that alter downstream model predictions in the intended direction—making CycleGAN the better choice for this task. The trade-off is clear: CVAE prioritizes anatomical fidelity at the expense of semantic change, while CycleGAN sacrifices maximal structural similarity to produce meaningful disease-related modifications that a deployed classifier can recognize. For counterfactual explanation in medical imaging, where changing model predictions and demonstrating plausible disease transitions are the end goals, CycleGAN's superior flip rates and confidence changes outweigh CVAE's reconstruction advantages.
 
-This work presented a generative framework for counterfactual image generation in chest X-rays, combining a CVAE and a CycleGAN trained on the NIH Chest X-ray dataset to translate images between healthy and pneumonia domains. The CVAE produced anatomically consistent counterfactuals (mean SSIM 0.82) but with limited realism (FID 136.5), while the CycleGAN achieved sharper translations (mean FID 115.3) though with residual artifacts. A downstream binary classifier was trained, with the best model reaching a test AUC of 0.67, insufficient to reliably assess counterfactual validity.
-
-Remaining challenges include class imbalance, image resolution, and the need for classifier-grounded explainability evaluation. Future work will increase image resolution to 256×256, refine model architectures, augment the training set with synthetic images to improve classifier performance, and use the improved classifier to validate counterfactual generation and support explainability through difference maps and Grad-CAM comparisons.
-
-**Conclusion:**
-
-While the CVAE demonstrates solid architectural design for image reconstruction, it is **unsuitable for counterfactual generation**. A counterfactual explanation model must introduce semantically meaningful changes that (1) alter downstream model predictions, (2) appear visually convincing to domain experts, and (3) represent plausible transitions between domains. The CVAE fails on all three counts: flip rates are negligible, changes are imperceptible, and the model produces no compelling evidence of pathological transformation.
-
-**Implications for Future Work:**
-
-To achieve effective counterfactual generation, alternative approaches should be explored: (1) weaken anatomical constraints to permit stronger domain shifts, (2) employ adversarial or diffusion-based methods that prioritize visual realism and semantic change over reconstruction fidelity, or (3) combine CVAE's anatomical strengths with a separate pathology-injection module. The current CVAE architecture trades counterfactual quality for stability, making it better suited for anatomical-preserving reconstruction tasks than for medical counterfactual explanation.
+Future efforts should focus on improving the flip rate performance of generative models through three complementary directions. First, increasing image resolution from 128×128 to 256×256 or 512×512 is expected to preserve fine-grained radiological features (consolidation patterns, interstitial markings) that may be critical for realistic pneumonia generation, directly improving classifier recognition of synthetic pathology. Second, diffusion-based generative models should be explored as an alternative to GANs and VAEs, since recent work (Kumar et al., 2025; Atad et al., 2024) has demonstrated that conditional diffusion models achieve both high visual quality and stronger disease representation in medical counterfactual generation; these models may overcome the current trade-off between anatomical preservation and semantic change. Third, a hybrid approach combining CVAE's anatomical strengths with CycleGAN's domain translation capability—by using the CVAE latent space to initialize or regularize CycleGAN generation—could leverage the complementary advantages of both models to produce counterfactuals that are both anatomically plausible and classifier-convincing. Additionally, human-in-the-loop validation with radiologists would be essential to confirm that classifier-based flip rates correlate with clinical plausibility, and explainability analysis (Grad-CAM, saliency maps) should be performed on generated counterfactuals to verify that classifiers are responding to disease-relevant features rather than artifacts.
 
 # Ethical considerations
 
