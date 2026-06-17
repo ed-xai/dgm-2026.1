@@ -533,13 +533,98 @@ The Rui Fan prepared set is kept completely separate from the training data and 
 
 #### 6.6.1 Architecture Overview
 
-> *Note: A full theoretical description of Point-E and the underlying diffusion framework is provided in a separate section authored by a project co-author. This section focuses only on the adaptation and fine-tuning decisions.*
+One of the major challenges in pothole severity assessment is obtaining three-dimensional geometric information from a single RGB image. Traditional 3D reconstruction methods typically require multiple camera views, stereo imaging systems, LiDAR sensors, or structured light scanners, which increase both cost and deployment complexity.
+
+To overcome these limitations, this research employs **Point-E**, a diffusion-based generative model developed by OpenAI for generating 3D point clouds from images [1]. Point-E enables the transformation of a monocular 2D pothole image into a 3D point cloud representation that can subsequently be used for geometric analysis and metric estimation.
+
+![Point-E Model Banner](https://github.com/openai/point-e/blob/main/point_e/examples/paper_banner.gif?raw=true)
+
+#### 6.6.2 Point-E Architecture and Pipeline
+
+The Point-E framework utilizes a two-stage generation process that combines image feature extraction with diffusion-based generative modeling to predict a three-dimensional representation [1].
+
+#### 1. Synthetic View Generation (Text-to-Image)
+
+While the primary input for our application is an existing image, the full Point-E pipeline begins with a text-to-image model. Point-E uses a version of GLIDE fine-tuned on 3D renderings to generate a single synthetic view from a text prompt [1]. This model leverages a large corpus of text-image pairs, allowing it to follow diverse and complex prompts.
+
+#### 2. Point Cloud Diffusion (Image-to-3D)
+
+The core of the 3D generation is the image-to-3D model, which is a stack of diffusion models that generate RGB point clouds conditioned on images [1]. This stack consists of two main components:
+
+- **Base Model:** Generates an initial, low-resolution 3D point cloud (typically 1024 points) conditioned on the input image.
+- **Upsampling Model:** A secondary diffusion model that takes the initial 1024-point cloud and upsamples it to a higher resolution (e.g., 4096 points) [2].
+
+#### 3. SDF Regression (Optional)
+
+For applications requiring continuous surfaces rather than discrete points, Point-E includes a small model for predicting Signed Distance Functions (SDF) from the generated 3D point clouds [2]. This allows for the extraction of 3D meshes using algorithms like Marching Cubes.
+
+---
+
+#### 6.6.3. Transformer-Based Diffusion Architecture
+
+The image-to-3D diffusion models in Point-E employ a novel Transformer-based architecture, as illustrated in the following technical breakdown.
+
+![Classifier Guidance Architecture](https://private-us-east-1.manuscdn.com/user_upload_by_module/feedback/310519663676304681/SpIXrCaHTvhkOpzj.jpeg?Expires=1813199202&Signature=uougRN3tRMA6GI~Z74d05czxnK~K4IWdaaIrUcED6LflT~YLh-9sJRxgqwJpgBGoRtafT4H6K1L8Fh0ZqCB9YZgRqEeF6Gkfl1UZ2YUW3752dNOAwkkxDHCNd8ORPUNvonBBQmnMfMyoj5T0ZwYS2sr1ENSMTUfMFd46k6RJFWGVrwAEPQr53l04w37BmVGpXAmEx-bg9tiC1B25a~tFyR8gsGeknLaH2p4kARO76HLYsT9FqNioPmOy0gguEDSSEGToRUCHGJuBIJ~26wzL9rPJp8bnNeNHoXtBILD6O2IQlnTjWw6hndWBA6mqAJ3vXRApk5USE-fMuy5gu3LP6w__&Key-Pair-Id=K2HSFNDJXOU9YS)
+
+### Technical Implementation Details:
+
+1.  **Image Conditioning (CLIP ViT-L/14):**
+    *   The input image (224x224 pixels) is processed by a pre-trained **CLIP ViT-L/14** encoder.
+    *   This produces **256 tokens** representing the latent features of the image, which provide global and local visual context for the 3D generation.
+
+2.  **Point Cloud Input and Normalization:**
+    *   The model processes **1024 points** at each step.
+    *   Each point is defined by its coordinates and color: **(X, Y, Z, R, G, B)**.
+    *   Crucially, each value is **normalized to the range [-1, 1]** before being passed through a linear layer to create 1024 point embeddings.
+
+3.  **Transformer Processing:**
+    *   The transformer architecture receives a combined sequence of tokens: the 256 image tokens from CLIP, a timestep token (**t**), and the 1024 noisy point tokens (**xₜ**).
+    *   The model utilizes self-attention and cross-attention mechanisms to integrate the visual conditioning into the denoising process.
+
+4.  **Classifier Guidance and Output:**
+    *   The network predicts the noise (**ε**) and variance (**Σ**) for the 1024 tokens.
+    *   **Classifier Guidance** is applied to steer the diffusion process toward the conditioning image, improving the fidelity and alignment of the generated 3D structure.
+    *   The final output is passed through a linear layer to produce the refined 1024x6 point cloud (X, Y, Z, R, G, B).
+
+---
+
+#### 6.6.4. Model Variants and Capabilities
+
+OpenAI released several versions of the Point-E models with varying parameter counts and capabilities [2]:
+
+| Model Name | Parameters | Description |
+| :--- | :--- | :--- |
+| `base40M-textvec` | 40 Million | Text-to-point-cloud model conditioning on a single CLIP text vector. Works for simple prompts. |
+| `base40M-imagevec` | 40 Million | Image-to-point-cloud model conditioning on a single CLIP image vector. |
+| `base40M` | 40 Million | Image-to-point-cloud model conditioning on the latent grid from CLIP. |
+| `base300M` | 300 Million | Larger image-to-point-cloud model conditioning on the latent grid. |
+| `base1B` | 1 Billion | The largest and most capable image-to-point-cloud model. |
+| `upsample` | 40 Million | Upsamples a 1024-point cloud to 4096 points. |
+| `sdf` | Small | Predicts signed distance functions for mesh generation. |
+
+For pothole reconstruction, the `base1B` or `base300M` models, combined with the `upsample` model, provide the best balance of quality and detail.
+
+---
+
+#### 6.6.5. Limitations and Considerations
+
+While Point-E is highly efficient, it has certain limitations that must be considered when applied to infrastructure monitoring:
+
+- **Resolution:** The generated point clouds are relatively low-resolution (up to 4096 points) and may contain noise, outliers, or cracks [2].
+- **Occlusion Handling:** The model sometimes struggles to produce correct geometry for parts of the object that are occluded in the input image [2].
+- **Generalization:** The models were trained on a dataset of several million 3D models, which may not perfectly represent the specific geometry of road surfaces and potholes. Fine-tuning or domain adaptation might be necessary for optimal performance.
+
+Despite these limitations, Point-E provides a rapid and cost-effective method for extracting 3D information from 2D images, making it a valuable tool for initial severity assessment.
+
+#### 6.6.6. Fine Tuning
+
+Unlike conventional reconstruction methods that rely on explicit geometric correspondence between multiple views, Point-E learns a probabilistic mapping between visual appearance and three-dimensional structure through large-scale training on image–3D object pairs.
 
 Point-E is an open-source model released by OpenAI, and this project uses the official repository directly as a library. The generation pipeline, the model weights, the CLIP image encoder, and the diffusion loss are all taken from the original implementation without modification. Our contribution is the fine-tuning of those weights on the pothole domain and the surrounding data preparation and evaluation infrastructure.
 
 Point-E offers models of different sizes (approximately 40 million, 300 million, and 1 billion parameters). This project uses the smallest variant, the base40M model, which generates 1024 points directly conditioned on a single square RGB image. The choice of the 40M model was driven by the available hardware (16 GB GPU memory) and the time constraints of the project: running four sequential fine-tuning phases totaling roughly 2000 epochs would be infeasible with larger models within the available time. An optional upsampler can refine the output to a higher point count, but it is not used in this project.
 
-#### 6.6.2 Training Inputs and Targets
+#### 6.6.7. Training Inputs and Targets
 
 Each training sample is a pair:
 
