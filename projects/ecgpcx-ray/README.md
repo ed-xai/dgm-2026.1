@@ -872,18 +872,23 @@ The near-zero flip rates and negligible confidence shifts indicate the model pri
 
 ### CycleGAN
 
-The choice of CycleGAN as the translation backbone was motivated by its ability to train on **unpaired data**, which is a realistic constraint in clinical settings where matched healthy/pneumonia images from the same patient are rarely available. The cycle consistency constraint is particularly well-suited to the counterfactual generation goal since it enforces that only disease-relevant features are modified, while preserving the underlying anatomy of the patient.
+CycleGAN adversarial objective pushes the generators toward semantically meaningful disease-related changes rather than conservative reconstructions, resulting in a flip rate more than five times higher for H→P than CVAE. Even among images that did not cross the decision boundary, the mean pneumonia probability increased consistently in the correct direction, indicating that translations are shifting the distribution toward the target class even when the change is not large enough to flip the prediction.
 
-The use of a **128 × 128** resolution was a deliberate trade-off between image fidelity and computational cost. Chest X-rays at this resolution retain coarse pathological patterns (opacification, consolidation) while keeping training feasible.
+The lung-mask variant improved both FID and SSIM relative to the baseline and confined all pixel-level changes to the segmented lung fields, making the counterfactuals more anatomically interpretable. However, FID scores remain moderately high and flip rate was modest, reflecting the inherent difficulty of introducing convincing pathological texture at 128 × 128 resolution with a severely imbalanced training set.
 
-The **identity loss** was included to avoid unnecessary texture shifts when a generator receives an image already in its target domain, which is especially important for grayscale medical images where contrast changes could be mistaken for pathology. Altough, this might be one of the reasons why we can't visualize much difference between original and generated images. 
+**Quantitative Results (mask-guided, CheXNet oracle):**
 
-Main limitations and future direction of the CycleGAN include:
+| Metric | H→P | P→H |
+|---|---|---|
+| FID ↓ | 112.30 | 107.81 |
+| SSIM ↑ | 0.9804 (std 0.0164) | 0.9810 (std 0.0186) |
+| Flip Rate ↑ | 0.146 (1,314 / 8,978) | 0.070 (3 / 43) |
+| Mean P(original) | 0.313 | 0.499 |
+| Mean P(translated) | 0.360 (+0.047) | 0.482 (−0.017) |
 
-- **Resolution**: 128 × 128 may be insufficient to capture fine-grained radiological features such as subtle consolidation boundaries. A follow-up experiment at 256 × 256 is planned if computational resources allow.
-- **Class imbalance**: We still have much more cases of healthy X-ray than Pneumonia, which might be affecting the performance of the generator, specially to learn H $\rightarrow$ P translaction. The unpaired setup partially mitigates this, but a more balanced set would strengthen the evaluation.
-- **FID as sole metric**: FID measures distributional similarity but not clinical relevance. Future work will complement it with a classifier-based counterfactual validity check. Generated pneumonia images should flip a downstream classifier's prediction with high probability.
-- **Artifact reduction**: minor artifacts observed at lung borders in some generated images warrant investigation into whether longer training, higher resolution, or spectral normalization in the discriminator could reduce them.
+**Limitations:**
+
+The same structural constraints observed in the CVAE apply here. At 128 × 128 resolution, fine-grained radiological cues such as consolidation patterns and interstitial markings are poorly represented, limiting both what the generator can learn to synthesize and what the oracle classifier can detect. The severe class imbalance further affects the H→P generator, which must learn disease-specific texture from a small number of pneumonia training examples. The lung mask constrains edits to a clinically relevant region and improves image quality metrics, but the generation are still not clear visually, which contributes to the relatively low flip rates despite the correct directional shift in classifier confidence.
 
 ## Classifier
 
