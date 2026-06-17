@@ -337,8 +337,8 @@ The project no longer includes a separate visual attribution component. Instead,
 
 $$
 FlipRate=
-\frac{\text{\#successful class changes}}
-{\text{\#counterfactuals}}
+\frac{\text{num successful class changes}}
+{\text{num counterfactuals}}
 $$
 
 - **Confidence change**: measures how much the classifier's confidence in the target class increases after generating the counterfactual.
